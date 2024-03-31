@@ -9,6 +9,8 @@ import SwiftUI
 
 @main
 struct RealityCaptureApp: App {
+    static let subsystem = "com.lychen.RealityCapture"
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
