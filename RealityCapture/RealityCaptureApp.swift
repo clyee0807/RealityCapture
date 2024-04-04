@@ -10,10 +10,11 @@ import SwiftUI
 @main
 struct RealityCaptureApp: App {
     static let subsystem = "com.lychen.RealityCapture"
-    
+    @StateObject var model = CameraViewModel()
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(model: model)
         }
     }
 }
