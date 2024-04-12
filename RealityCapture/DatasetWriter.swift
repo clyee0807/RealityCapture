@@ -10,12 +10,31 @@ import ARKit
 import Zip
 
 extension UIImage {
-    func resizeImageTo(size: CGSize) -> UIImage? {
-        UIGraphicsBeginImageContextWithOptions(size, false, 0.0)
-        self.draw(in: CGRect(origin: CGPoint.zero, size: size))
-        let resizedImage = UIGraphicsGetImageFromCurrentImageContext()!
+//    func resizeImageTo(size: CGSize) -> UIImage? {
+//        UIGraphicsBeginImageContextWithOptions(size, false, 0.0)
+//        self.draw(in: CGRect(origin: CGPoint.zero, size: size))
+//        let resizedImage = UIGraphicsGetImageFromCurrentImageContext()!
+//        UIGraphicsEndImageContext()
+//        return resizedImage
+//    }
+    func resizeImageTo(size targetSize: CGSize) -> UIImage? {
+        let size = self.size
+
+        let widthRatio  = targetSize.width  / size.width
+        let heightRatio = targetSize.height / size.height
+
+        let ratio = min(widthRatio, heightRatio)
+        let newSize = CGSize(width: size.width * ratio, height: size.height * ratio)
+
+        let rect = CGRect(x: 0, y: 0, width: newSize.width, height: newSize.height)
+
+        UIGraphicsBeginImageContextWithOptions(newSize, false, self.scale)
+        self.draw(in: rect)
+
+        let newImage = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
-        return resizedImage
+
+        return newImage
     }
 }
 
@@ -141,7 +160,7 @@ class DatasetWriter {
         }
     }
     
-    func writeFrameToDisk(frame: ARFrame, useDepthIfAvailable: Bool = true) {
+    func writeFrameToDisk(frame: ARFrame, viewModel: ARViewModel, useDepthIfAvailable: Bool = true) {
         let frameName =  "\(getCurrentFrameName()).png"
         let depthFrameName =  "\(getCurrentFrameName()).depth.png"
         let baseDir = projectDir
@@ -160,28 +179,38 @@ class DatasetWriter {
             manifest.cy =  frame.camera.intrinsics[2, 1]
         }
         
-        let useDepth = frame.sceneDepth != nil && useDepthIfAvailable
         
-        let frameMetadata = getFrameMetadata(frame, withDepth: useDepth)
-        let rgbBuffer = pixelBufferToUIImage(pixelBuffer: frame.capturedImage)
-        let depthBuffer = useDepth ? pixelBufferToUIImage(pixelBuffer: frame.sceneDepth!.depthMap).resizeImageTo(size:  frame.camera.imageResolution) : nil
-        
-        DispatchQueue.global().async {
-            do {
-                let rgbData = rgbBuffer.pngData()
-                try rgbData?.write(to: fileName)
-                if useDepth {
-                    let depthData = depthBuffer!.pngData()
-                    try depthData?.write(to: depthFileName)
+        viewModel.session?.captureHighResolutionFrame { [weak self] frame, error in
+            guard let self = self else { return }
+            guard let frame = frame, error == nil else {
+                print("Error capturing high-resolution frame: \(String(describing: error))")
+
+                return
+            }
+            
+            let useDepth = frame.sceneDepth != nil && useDepthIfAvailable
+            
+            let frameMetadata = getFrameMetadata(frame, withDepth: useDepth)
+            let rgbBuffer = pixelBufferToUIImage(pixelBuffer: frame.capturedImage)
+            let depthBuffer = useDepth ? pixelBufferToUIImage(pixelBuffer: frame.sceneDepth!.depthMap).resizeImageTo(size:  frame.camera.imageResolution) : nil
+            
+            DispatchQueue.global().async {
+                do {
+                    let rgbData = rgbBuffer.pngData()
+                    try rgbData?.write(to: fileName)
+                    if useDepth {
+                        let depthData = depthBuffer!.pngData()
+                        try depthData?.write(to: depthFileName)
+                    }
+                }
+                catch {
+                    print(error)
+                }
+                DispatchQueue.main.async {
+                    self.manifest.frames.append(frameMetadata)
                 }
             }
-            catch {
-                print(error)
-            }
-            DispatchQueue.main.async {
-                self.manifest.frames.append(frameMetadata)
-            }
+            currentFrameCounter += 1
         }
-        currentFrameCounter += 1
     }
 }

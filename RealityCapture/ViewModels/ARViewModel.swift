@@ -18,6 +18,9 @@ enum AppError : Error {
 
 class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
     @Published var appState = AppState()
+    @Published var anchorPosition: String = ""  // anchor position
+    @Published var cameraPosition: SIMD3<Float>? = nil // camera position
+    
     var session: ARSession? = nil
     var arView: ARView? = nil
     var cancellables = Set<AnyCancellable>()
@@ -27,6 +30,10 @@ class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
         self.datasetWriter = datasetWriter
         super.init()
         self.setupObservers()
+        
+        if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
+            self.appState.supportsDepth = true
+        }
     }
     
     func setupObservers() {
@@ -40,20 +47,12 @@ class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
             .sink { x in
                 switch x {
                 case .Offline:
-//                    self.appState.stream = false
                     print("Changed to offline")
                 case .Online:
                     print("Changed to online")
                 }
             }
             .store(in: &cancellables)
-        
-//        frameSubject.throttle(for: 0.5, scheduler: RunLoop.main, latest: true).sink {
-//            f in
-//            if self.appState.stream && self.appState.appMode == .Online {
-//                self.ddsWriter.writeFrameToTopic(frame: f)
-//            }
-//        }.store(in: &cancellables)
     }
     
     
@@ -74,14 +73,19 @@ class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
     }
     
     
-    func session(
-        _ session: ARSession,
-        didUpdate frame: ARFrame
-    ) {
+    func session(_ session: ARSession, didUpdate frame: ARFrame) {
 //        frameSubject.send(frame)
+        let cameraTransform = frame.camera.transform
+        self.cameraPosition = SIMD3<Float>(cameraTransform.columns.3.x,
+                                        cameraTransform.columns.3.y,
+                                        cameraTransform.columns.3.z)
     }
     
     func session(_ session: ARSession, cameraDidChangeTrackingState camera: ARCamera) {
         self.appState.trackingState = trackingStateToString(camera.trackingState)
+    }
+    
+    func updateAnchorPosition(_ anchor: AnchorEntity) {
+        anchorPosition = " \(anchor.position)"
     }
 }

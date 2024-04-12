@@ -44,6 +44,19 @@ struct ContentView : View {
             VStack {
                 Spacer()
                 HStack(spacing: 20) {
+                    Button(action: {
+                        print("Anchor position: \(viewModel.anchorPosition)")
+                        print("Camera position: \(viewModel.cameraPosition)")
+//                        viewModel.
+                    }) {
+                        Text("Debug")
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 5)
+                    }
+                    .buttonStyle(.bordered)
+                    .buttonBorderShape(.capsule)
+                    .background(.red)
+                    
                     if case .Offline = viewModel.appState.appMode {
                         if viewModel.appState.writerState == .SessionNotStarted {
                             Spacer()
@@ -87,7 +100,7 @@ struct ContentView : View {
                             .buttonBorderShape(.capsule)
                             Button(action: {
                                 if let frame = viewModel.session?.currentFrame {
-                                    viewModel.datasetWriter.writeFrameToDisk(frame: frame)
+                                    viewModel.datasetWriter.writeFrameToDisk(frame: frame, viewModel: viewModel)
                                 }
                             }) {
                                 Text("Save Frame")
