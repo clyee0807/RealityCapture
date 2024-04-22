@@ -18,7 +18,7 @@ enum AppError : Error {
 
 class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
     @Published var appState = AppState()
-    @Published var anchorPosition: String = ""  // anchor position
+    @Published var anchorPosition: SIMD3<Float>? = nil // anchor position
     @Published var cameraPosition: SIMD3<Float>? = nil // camera position
     
     var session: ARSession? = nil
@@ -85,7 +85,7 @@ class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
         self.appState.trackingState = trackingStateToString(camera.trackingState)
     }
     
-    func updateAnchorPosition(_ anchor: AnchorEntity) {
-        anchorPosition = " \(anchor.position)"
+    func updateAnchorPosition(_ anchorPosition: SIMD3<Float>) {
+        self.anchorPosition = anchorPosition
     }
 }

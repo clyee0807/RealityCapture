@@ -5,6 +5,7 @@
 
 import UIKit
 import SwiftUI
+import SceneKit
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
