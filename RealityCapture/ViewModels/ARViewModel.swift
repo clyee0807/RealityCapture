@@ -21,6 +21,8 @@ class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
     @Published var anchorPosition: SIMD3<Float>? = nil // anchor position
     @Published var cameraPosition: SIMD3<Float>? = nil // camera position
     
+    @Published var originAnchor: AnchorEntity? = nil // position of boundung box
+    
     var session: ARSession? = nil
     var arView: ARView? = nil
     var cancellables = Set<AnyCancellable>()
@@ -85,7 +87,9 @@ class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
         self.appState.trackingState = trackingStateToString(camera.trackingState)
     }
     
-    func updateAnchorPosition(_ anchorPosition: SIMD3<Float>) {
+    func updateAnchorPosition(_ anchorPosition: SIMD3<Float>, originAnchor: AnchorEntity) {
         self.anchorPosition = anchorPosition
+        self.originAnchor = originAnchor
+        print("update origin anchor in viewModel: \(originAnchor.position)")
     }
 }

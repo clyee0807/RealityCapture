@@ -25,8 +25,7 @@ struct ARViewContainer: UIViewRepresentable {
         configuration.worldAlignment = .gravity
         configuration.isAutoFocusEnabled = true
         
-         arView.debugOptions = [.showWorldOrigin]
-//        arView.debugOptions = [.showAnchorOrigins]
+        arView.debugOptions = [.showWorldOrigin]
 
         arView.session.run(configuration)
         arView.session.delegate = viewModel
@@ -53,9 +52,6 @@ struct ARViewContainer: UIViewRepresentable {
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
     }
-    
-  
-
 }
 
 
@@ -63,35 +59,44 @@ struct ARViewContainer: UIViewRepresentable {
 class Coordinator: NSObject {
     var parent: ARViewContainer
     var boundingBox: Entity?
+    
     var anchor: AnchorEntity?
     var anchorPosition: SIMD3<Float>?
     var selectedEntity: Entity?
+    
+    var originAnchor: AnchorEntity?
+    
 
     init(_ parent: ARViewContainer) {
         self.parent = parent
         self.selectedEntity = nil
+        
+        self.originAnchor = self.parent.viewModel.originAnchor
     }
     
     @objc func handleTap(_ sender: UITapGestureRecognizer) {
         guard let arView = parent.viewModel.arView else { return }
         let location = sender.location(in: arView)
         let results = arView.raycast(from: location, allowing: .estimatedPlane, alignment: .any)
-
+        
         if let firstResult = results.first {
             if boundingBox == nil {
-                let anchor = AnchorEntity(world: firstResult.worldTransform)
-//                print("anchor.transform: \(anchor.transform)")
-//                print("firstResult.worldTransform: \(firstResult.worldTransform)")
+                let originAnchor = AnchorEntity(world: firstResult.worldTransform)
+ 
+                let anchor = AnchorEntity()
                 let anchorPosition = SIMD3<Float> (
                     firstResult.worldTransform.columns.3.x,
                     firstResult.worldTransform.columns.3.y,
                     firstResult.worldTransform.columns.3.z
                 )
-                print("anchorPosition: \(anchorPosition)")
+                anchor.position = anchorPosition
+                originAnchor.position = anchorPosition
+                print("originAnchor.position: \(originAnchor.position)")
+                print("anchor.position: \(anchor.position)")
                 
                 // render a box at anchor position for debugging
-                let anchorPoint = AnchorPositionPoint(anchorPosition: anchorPosition)
-                anchor.addChild(anchorPoint)
+//                let anchorPoint = AnchorPositionPoint(anchorPosition: anchorPosition)
+//                anchor.addChild(anchorPoint)
                 
                 
                 let boxSize: Float = 0.05
@@ -105,17 +110,20 @@ class Coordinator: NSObject {
                     SIMD3<Float>(-boxSize,  boxSize,  boxSize),
                     SIMD3<Float>( boxSize,  boxSize,  boxSize)
                 ]
-                boundingBox = BlackMirrorzBoundingBox(anchorPosition: anchorPosition,
-                                                      points: points, color: .blue)
-
-//                let heightEditor = BoundingBoxHeightEditor(anchorPosition: anchorPosition)
+                boundingBox = BlackMirrorzBoundingBox(anchorPosition: anchorPosition, points: points, color: .blue)
+                boundingBox?.name = "BoundingBox"
                 
-                anchor.addChild(boundingBox!)
+//                let heightEditor = BoundingBoxHeightEditor(anchorPosition: anchorPosition)
 //                anchor.addChild(heightEditor)
                 
-                arView.scene.addAnchor(anchor)
-                self.anchor = anchor
-                parent.viewModel.updateAnchorPosition(anchorPosition)
+//                anchor.addChild(boundingBox!)
+//                arView.scene.addAnchor(anchor)
+                originAnchor.addChild(boundingBox!)
+                originAnchor.name = "originAnchor"
+//                originAnchor.addChild(anchor)
+                   
+                parent.viewModel.updateAnchorPosition(originAnchor.position, originAnchor: originAnchor)
+                arView.scene.addAnchor(originAnchor)
             }
             else {
                 print("boundingBox already exists and tap")
@@ -134,33 +142,37 @@ class Coordinator: NSObject {
     }
 
     @objc func handlePan(_ sender: UIPanGestureRecognizer) {
-        guard let arView = parent.viewModel.arView else { return }
-        let location = sender.location(in: arView)
- 
+//        guard let arView = parent.viewModel.arView else { return }
+//        let location = sender.location(in: arView)
+        guard let arView = parent.viewModel.arView, let originAnchor = parent.viewModel.originAnchor else { return }
+        
         switch sender.state {
             case .began:
-                print("In Pan Gesture Began state")
+            print("In Pan Gesture Began state, originAnchor.position: \(originAnchor.position)")
                 // Perform a hit test to find an existing anchor or place a new one
 //                let results = arView.raycast(from: location, allowing: .estimatedPlane, alignment: .any)
 //                if let firstResult = results.first {
 //                    print("firstResult: \(firstResult)")
 //                }
             case .changed:
-//                print("In Pan Gesture Change state")
                 // Rotate the bounding box based on the pan gesture
                 let translation = sender.translation(in: sender.view)
                 let angle = Float(translation.x) / 100.0
                 if let boundingBox = self.boundingBox {
 //                    let rotation = simd_quatf(angle: angle, axis: [0, 1, 0])
-//                    boundingBox.orientation = boundingBox.orientation * (-rotation)
+//                    boundingBox.orientation = rotation * boundingBox.orientation
+                    
+                    let relativePosition = boundingBox.position - originAnchor.position
+                    let positionMatrix = simd_float4(relativePosition.x, relativePosition.y, relativePosition.z, 1.0)
+                    
+                    let rotation = simd_quatf(angle: angle, axis: [0, 1, 0])
+                    let rotationMatrix = simd_float4x4(rotation)
 
-//                    let curMatrix = boundingBox.transform.matrix
-//                    let rotationMatrix = simd_float4x4(simd_quatf(angle: angle, axis: [0, 1, 0]))
-//                    let newMatrix = simd_mul(curMatrix, rotationMatrix)
-//                    boundingBox.move(to: newMatrix, relativeTo: nil)
+                    let rotatedPosition = simd_mul(rotationMatrix, positionMatrix)
 
-                    let transform = Transform(pitch: 0, yaw: angle, roll: 0)
-                    boundingBox.move(to: transform, relativeTo: boundingBox)
+                    boundingBox.position = SIMD3<Float>(rotatedPosition.x, rotatedPosition.y, rotatedPosition.z) + originAnchor.position
+                    boundingBox.orientation = rotation * boundingBox.orientation
+
                 }
                 sender.setTranslation(.zero, in: sender.view) // reset gesture
                 break
