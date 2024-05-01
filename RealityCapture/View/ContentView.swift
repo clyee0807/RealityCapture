@@ -47,7 +47,8 @@ struct ContentView : View {
                     Button(action: {
                         print("Anchor position: \(viewModel.anchorPosition)")
                         print("Camera position: \(viewModel.cameraPosition)")
-//                        viewModel.
+                        let size = viewModel.calculateBoundingBoxSize()
+                        print("Bounding box size: (\(size.x), \(size.y), \(size.z))")
                     }) {
                         Text("Debug")
                             .padding(.horizontal, 20)

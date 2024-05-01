@@ -92,4 +92,23 @@ class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
         self.originAnchor = originAnchor
         print("update origin anchor in viewModel: \(originAnchor.position)")
     }
+    
+    func calculateBoundingBoxSize() -> SIMD3<Float> {
+        guard let lineXEntity = self.originAnchor?.findEntity(named: "line2") as? ModelEntity,
+            let lineYEntity = self.originAnchor?.findEntity(named: "line3") as? ModelEntity,
+            let lineZEntity = self.originAnchor?.findEntity(named: "line5") as? ModelEntity,
+            let meshX = lineXEntity.components[ModelComponent.self]?.mesh,
+            let meshY = lineYEntity.components[ModelComponent.self]?.mesh,
+            let meshZ = lineZEntity.components[ModelComponent.self]?.mesh else {
+            print("One or more entities are missing or do not have a ModelComponent.")
+            return SIMD3<Float>(0, 0, 0)
+        }
+
+        let lengthX = meshX.bounds.max.x - meshX.bounds.min.x
+        let lengthY = meshY.bounds.max.y - meshY.bounds.min.y
+        let lengthZ = meshZ.bounds.max.z - meshZ.bounds.min.z
+
+        return SIMD3<Float>(lengthX, lengthY, lengthZ)
+  
+    }
 }
