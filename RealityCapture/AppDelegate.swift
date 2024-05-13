@@ -9,7 +9,8 @@ import SceneKit
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
-
+    static let subsystem: String = "com.lychen.RealityCapture"
+    
     var window: UIWindow?
     var view: ContentView?
     

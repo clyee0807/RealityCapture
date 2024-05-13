@@ -2,7 +2,7 @@
 //  BoundingBox.swift
 //  RealityCapture
 //
-//  Created by CGVLAB on 2024/4/16.
+//  Created by lychen on 2024/4/16.
 //
 
 import Foundation

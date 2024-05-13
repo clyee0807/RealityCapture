@@ -2,7 +2,7 @@
 //  AppState.swift
 //  RealityCapture
 //
-//  Created by CGVLAB on 2024/4/4.
+//  Created by lychen on 2024/4/4.
 //
 
 import Foundation

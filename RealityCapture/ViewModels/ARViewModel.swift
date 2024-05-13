@@ -2,7 +2,7 @@
 //  ARViewModel.swift
 //  RealityCapture
 //
-//  Created by CGVLAB on 2024/4/4.
+//  Created by lychen on 2024/4/4.
 //
 
 import Foundation
@@ -10,18 +10,89 @@ import Zip
 import Combine
 import ARKit
 import RealityKit
+import os
 
 enum AppError : Error {
     case projectAlreadyExists
     case manifestInitializationFailed
 }
 
+enum ModelState: String, CustomStringConvertible {
+    var description: String { rawValue }
+
+    case notSet
+    case detecting
+    case capturing
+    case completed
+    case restart
+    case failed
+}
+
+enum CaptureMode: String, CaseIterable {
+    case manual
+    case auto
+}
+
 class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
+    let logger = Logger(subsystem: AppDelegate.subsystem, category: "ARViewModel")
+    
     @Published var appState = AppState()
+//    @Published var modelState: ModelState = .notSet
+    @Published var state: ModelState = .notSet {
+        didSet {
+            logger.debug("didSet AppDataModel.state to \(self.state)")
+
+            if state != oldValue {
+                performStateTransition(from: oldValue, to: state)
+            }
+        }
+    }
+    
+    @Published var captureMode: CaptureMode = .auto
+    
+
     @Published var anchorPosition: SIMD3<Float>? = nil // anchor position
     @Published var cameraPosition: SIMD3<Float>? = nil // camera position
     
     @Published var originAnchor: AnchorEntity? = nil // position of boundung box
+    
+    @Published var progressDial: ProgressDial? = nil
+    @Published var closestPoint: Int? = nil
+    
+    @Published var isAutoCapture: Bool = false
+    
+    ///-------
+    var autoCaptureTimer: Timer? = nil
+    func switchCaptureMode() {
+        switch captureMode {
+        case .manual:
+            captureMode = .auto
+            isAutoCapture = true
+            startAutoCapture()
+        case .auto:
+            captureMode = .manual
+            isAutoCapture = false
+            stopAutoCapture()
+        }
+    }
+    private func startAutoCapture() {
+        autoCaptureTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+           self?.captureFrame()
+        }
+    }
+
+    private func stopAutoCapture() {
+       autoCaptureTimer?.invalidate()
+       autoCaptureTimer = nil
+    }
+    
+    func captureFrame() {
+       if let frame = session?.currentFrame {
+           datasetWriter.writeFrameToDisk(frame: frame, viewModel: self)
+       }
+   }
+    ///-------
+    
     
     var session: ARSession? = nil
     var arView: ARView? = nil
@@ -74,18 +145,66 @@ class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
         session?.run(config, options: [.resetTracking])
     }
     
-    
+    // 每幀 ARframe 更新都會呼叫
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
-//        frameSubject.send(frame)
         let cameraTransform = frame.camera.transform
-        self.cameraPosition = SIMD3<Float>(cameraTransform.columns.3.x,
-                                        cameraTransform.columns.3.y,
-                                        cameraTransform.columns.3.z)
+        self.cameraPosition = SIMD3<Float>(cameraTransform.columns.3.x, cameraTransform.columns.3.y, cameraTransform.columns.3.z)
+        
+        if let dial = progressDial {
+            self.closestPoint = dial.findNearestPoint(cameraPosition: cameraPosition!, anchorPosition: anchorPosition!)
+        }
     }
     
     func session(_ session: ARSession, cameraDidChangeTrackingState camera: ARCamera) {
         self.appState.trackingState = trackingStateToString(camera.trackingState)
     }
+    
+    private func performStateTransition(from fromState: ModelState, to toState: ModelState) {
+        if fromState == .failed {
+            logger.error("Error to failed state.")
+        }
+
+        switch toState {
+            case .notSet:
+                logger.debug("Set ModelState to notSet")
+            
+            case .detecting:
+                logger.debug("Set ModelState to detecting")
+                if let entity = originAnchor?.children.first(where: { $0.name == "ProgressDial"}) {
+                    entity.removeFromParent()
+                } else {
+                    logger.error("ProgressDial entity not found")
+                }
+            
+            case .capturing:
+                logger.debug("Set ModelState to capturing")
+                
+                if let entity = originAnchor?.children.first(where: { $0.name == "ProgressDial"}) {
+//                    findNearestPoint(camera: cameraPosition)
+                } else {
+                    logger.info("Create ProgressDial.")
+                    createProgressDial()
+                }
+
+            case .failed:
+                logger.error("App failed state error")
+                // Shows error screen.
+            default:
+                break
+        }
+    }
+    
+    private func createProgressDial() {
+        guard let originAnchor = self.originAnchor else {
+            logger.error("originAnchor is nil")
+            return
+        }
+        
+        self.progressDial = ProgressDial(anchorPosition: anchorPosition!)
+        self.progressDial?.name = "ProgressDial"
+        originAnchor.addChild(self.progressDial!)
+    }
+    
     
     func updateAnchorPosition(_ anchorPosition: SIMD3<Float>, originAnchor: AnchorEntity) {
         self.anchorPosition = anchorPosition

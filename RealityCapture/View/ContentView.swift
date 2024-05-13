@@ -2,7 +2,7 @@
 //  ContentView.swift
 //  RealityCapture
 //
-//  Created by CGVLAB on 2024/4/4.
+//  Created by lychen on 2024/4/4.
 //
 
 import SwiftUI
@@ -24,6 +24,7 @@ struct ContentView : View {
                 ARViewContainer(viewModel).edgesIgnoringSafeArea(.all)
                 VStack() {
                     HStack() {
+                        DebugMessageButton(model: viewModel)
                         Spacer()
                         
                         VStack(alignment:.leading) {
@@ -44,19 +45,7 @@ struct ContentView : View {
             VStack {
                 Spacer()
                 HStack(spacing: 20) {
-                    Button(action: {
-                        print("Anchor position: \(viewModel.anchorPosition)")
-                        print("Camera position: \(viewModel.cameraPosition)")
-                        let size = viewModel.calculateBoundingBoxSize()
-                        print("Bounding box size: (\(size.x), \(size.y), \(size.z))")
-                    }) {
-                        Text("Debug")
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 5)
-                    }
-                    .buttonStyle(.bordered)
-                    .buttonBorderShape(.capsule)
-                    .background(.red)
+                    CaptureModeButton(model: viewModel/*, frameWidth: width / 3*/)
                     
                     if case .Offline = viewModel.appState.appMode {
                         if viewModel.appState.writerState == .SessionNotStarted {
@@ -66,7 +55,7 @@ struct ContentView : View {
                                 viewModel.resetWorldOrigin()
                             }) {
                                 Text("Reset")
-                                    .padding(.horizontal, 20)
+                                    .padding(.horizontal, 15)
                                     .padding(.vertical, 5)
                             }
                             .buttonStyle(.bordered)
@@ -75,13 +64,14 @@ struct ContentView : View {
                             Button(action: {
                                 do {
                                     try viewModel.datasetWriter.initializeProject()
+                                    viewModel.state = .capturing
                                 }
                                 catch {
                                     print("\(error)")
                                 }
                             }) {
                                 Text("Start")
-                                    .padding(.horizontal, 20)
+                                    .padding(.horizontal, 15)
                                     .padding(.vertical, 5)
                             }
                             .buttonStyle(.borderedProminent)
@@ -92,6 +82,7 @@ struct ContentView : View {
                             Spacer()
                             Button(action: {
                                 viewModel.datasetWriter.finalizeProject()
+                                viewModel.state = .detecting
                             }) {
                                 Text("End")
                                     .padding(.horizontal, 20)
@@ -100,9 +91,10 @@ struct ContentView : View {
                             .buttonStyle(.bordered)
                             .buttonBorderShape(.capsule)
                             Button(action: {
-                                if let frame = viewModel.session?.currentFrame {
-                                    viewModel.datasetWriter.writeFrameToDisk(frame: frame, viewModel: viewModel)
-                                }
+//                                if let frame = viewModel.session?.currentFrame {
+//                                    viewModel.datasetWriter.writeFrameToDisk(frame: frame, viewModel: viewModel)
+//                                }
+                                viewModel.captureFrame()
                             }) {
                                 Text("Save Frame")
                                     .padding(.horizontal, 20)
@@ -119,6 +111,82 @@ struct ContentView : View {
         }
     }
 }
+
+struct CaptureModeButton: View {
+//    static let toggleDiameter = CaptureButton.outerDiameter / 3.0
+    static let toggleDiameter = 20.0
+    static let backingDiameter = CaptureModeButton.toggleDiameter * 2.0
+    
+    @ObservedObject var model: ARViewModel
+//    var frameWidth: CGFloat
+    
+    var body: some View {
+        VStack(alignment: .center/*@END_MENU_TOKEN@*/, spacing: 2) {
+            Button(action: {
+                withAnimation {
+                    model.switchCaptureMode()
+                }
+            }, label: {
+                ZStack {
+                    Circle()
+                        .frame(width: CaptureModeButton.backingDiameter,
+                               height: CaptureModeButton.backingDiameter)
+                        .foregroundColor(Color.white)
+//                        .opacity(Double(CameraView.buttonBackingOpacity))
+                    Circle()
+                        .frame(width: CaptureModeButton.toggleDiameter,
+                               height: CaptureModeButton.toggleDiameter)
+                        .foregroundColor(Color.white)
+                    switch model.captureMode {
+                    case .auto:
+                        Text("A").foregroundColor(Color.black)
+                            .frame(width: CaptureModeButton.toggleDiameter,
+                                   height: CaptureModeButton.toggleDiameter,
+                                   alignment: .center)
+                    case .manual:
+                        Text("M").foregroundColor(Color.black)
+                            .frame(width: CaptureModeButton.toggleDiameter,
+                                   height: CaptureModeButton.toggleDiameter,
+                                   alignment: .center)
+                    }
+                }
+            })
+            // This is the caption that appears when the user is in .－auto mode.
+//            if case .auto = model.captureMode {
+//                Text("Auto Capture")
+//                    .font(.caption)
+//                    .foregroundColor(.secondary)
+//                    .transition(.opacity)
+//            }
+        }
+        // This frame centers the view and keeps it from reflowing when the view has a caption.
+        // The view uses .top so the button won't move and the text will animate in and out.
+//        .frame(width: frameWidth, height: CaptureModeButton.backingDiameter, alignment: .top)
+    }
+}
+
+struct DebugMessageButton: View {
+    @ObservedObject var model: ARViewModel
+    
+    var body: some View {
+        Button(action: {
+            print(ARWorldTrackingConfiguration.supportedVideoFormats)
+//            print("Anchor position: \(model.anchorPosition)")
+//            print("Camera position: \(model.cameraPosition)")
+//            let size = model.calculateBoundingBoxSize()
+//            print("Bounding box size: (\(size.x), \(size.y), \(size.z))")
+//            print("originAnchor: \n \(viewModel.originAnchor)")
+//            print("cloestPoint: \(model.closestPoint)")
+        }) {
+            Text("Debug")
+        }
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.capsule)
+        .background(.red)
+        
+    }
+}
+
 
 #if DEBUG
 struct ContentView_Previews : PreviewProvider {

@@ -2,7 +2,7 @@
 //  ARViewContainer.swift
 //  RealityCapture
 //
-//  Created by CGVLAB on 2024/4/4.
+//  Created by lychen on 2024/4/4.
 //
 
 //import OSLog
@@ -37,9 +37,11 @@ struct ARViewContainer: UIViewRepresentable {
                                              action: #selector(Coordinator.handleTap(_:)))
         arView.addGestureRecognizer(tapGesture)
         
+
         let panGesture = UIPanGestureRecognizer(target: context.coordinator,
-                                             action: #selector(Coordinator.handlePan(_:)))
+                                                action: #selector(Coordinator.handlePan(_:)))
         arView.addGestureRecognizer(panGesture)
+        
         
         viewModel.session = arView.session
         viewModel.arView = arView
@@ -81,6 +83,8 @@ class Coordinator: NSObject {
         
         if let firstResult = results.first {
             if boundingBox == nil {
+                parent.viewModel.state = .detecting
+                
                 let originAnchor = AnchorEntity(world: firstResult.worldTransform)
  
                 let anchorPosition = SIMD3<Float> (
@@ -90,6 +94,10 @@ class Coordinator: NSObject {
                 )
                 originAnchor.position = anchorPosition
                 print("originAnchor.position: \(originAnchor.position)")
+                
+                // render a box at anchor position for debugging
+//                let anchorPoint = AnchorPositionPoint(anchorPosition: anchorPosition)
+//                originAnchor.addChild(anchorPoint)
                 
                 let boxSize: Float = 0.05
                 let points = [
@@ -105,8 +113,6 @@ class Coordinator: NSObject {
                 boundingBox = BlackMirrorzBoundingBox(anchorPosition: anchorPosition, points: points, color: .blue)
                 boundingBox?.name = "BoundingBox"
                 
-//                let heightEditor = BoundingBoxHeightEditor(anchorPosition: anchorPosition)
-//                anchor.addChild(heightEditor)
                 
                 originAnchor.addChild(boundingBox!)
                 originAnchor.name = "originAnchor"
@@ -115,10 +121,11 @@ class Coordinator: NSObject {
                 arView.scene.addAnchor(originAnchor)
             }
             else {
-//                print("boundingBox already exists and tap")
+                print("boundingBox already exists and tap")
                 let hitTestResults = arView.hitTest(location, query: .nearest, mask: .all)
-                for result in hitTestResults {
-                    print("Tap hit entity: \(result.entity.name)")
+                hitEntity = hitTestResults.first?.entity
+                if let entity = hitEntity {
+                    print("hitEntity: \(entity.name)")
                 }
             }
         }
@@ -128,20 +135,21 @@ class Coordinator: NSObject {
     private var initialY: CGFloat = 0.0
     private var hitEntity: Entity? = nil
     @objc func handlePan(_ sender: UIPanGestureRecognizer) {
-        guard let arView = parent.viewModel.arView, let originAnchor = parent.viewModel.originAnchor else { return }
-        let location = sender.location(in: arView)
-       
-        switch sender.state {
+        if parent.viewModel.state == .detecting {
+            guard let arView = parent.viewModel.arView, let originAnchor = parent.viewModel.originAnchor else { return }
+            let location = sender.location(in: arView)
+            
+            switch sender.state {
             case .began:
                 print("In Pan Gesture Began state, originAnchor.position: \(originAnchor.position)")
                 let hitTestResults = arView.hitTest(location, query: .nearest, mask: .all)
                 hitEntity = hitTestResults.first?.entity
                 if let entity = hitEntity {
-                    print("hitEntity: \(entity.name)")
+//                    print("hitEntity: \(entity.name)")
                 }
                 initialX = location.x
                 initialY = location.y
-            
+                
             case .changed:
                 if hitEntity?.name == "heightEditor" {
                     moveHeightEditor(location: location)
@@ -174,6 +182,7 @@ class Coordinator: NSObject {
                 break
             default:
                 break
+            }
         }
     }
     

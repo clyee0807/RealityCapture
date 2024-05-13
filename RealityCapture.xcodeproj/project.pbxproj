@@ -11,8 +11,10 @@
 		113A69692BB422DF000F59DA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 113A69682BB422DF000F59DA /* Assets.xcassets */; };
 		113A696C2BB422DF000F59DA /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 113A696B2BB422DF000F59DA /* Preview Assets.xcassets */; };
 		114784A62BBFC9A500C26D2E /* Zip in Frameworks */ = {isa = PBXBuildFile; productRef = 114784A52BBFC9A500C26D2E /* Zip */; };
+		117F49162BE2BA5000FCA65D /* ProgressDial.swift in Sources */ = {isa = PBXBuildFile; fileRef = 117F49152BE2BA5000FCA65D /* ProgressDial.swift */; };
 		11BA5A8A2BCDA20700938204 /* art.scnassets in Resources */ = {isa = PBXBuildFile; fileRef = 11BA5A892BCDA20700938204 /* art.scnassets */; };
 		11BA5A8C2BCDA29500938204 /* BoundingBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11BA5A8B2BCDA29500938204 /* BoundingBox.swift */; };
+		11D319742BF1B83900ABC5C3 /* MotionDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11D319732BF1B83900ABC5C3 /* MotionDetection.swift */; };
 		11D9D9492BBE74C30018B0B5 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11D9D9482BBE74C30018B0B5 /* ContentView.swift */; };
 		11D9D94B2BBE76C00018B0B5 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11D9D94A2BBE76C00018B0B5 /* AppState.swift */; };
 		11D9D94D2BBE770D0018B0B5 /* DatasetWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11D9D94C2BBE770D0018B0B5 /* DatasetWriter.swift */; };
@@ -29,8 +31,10 @@
 		113A69682BB422DF000F59DA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		113A696B2BB422DF000F59DA /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		113A69722BB432EA000F59DA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		117F49152BE2BA5000FCA65D /* ProgressDial.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressDial.swift; sourceTree = "<group>"; };
 		11BA5A892BCDA20700938204 /* art.scnassets */ = {isa = PBXFileReference; lastKnownFileType = wrapper.scnassets; path = art.scnassets; sourceTree = "<group>"; };
 		11BA5A8B2BCDA29500938204 /* BoundingBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoundingBox.swift; sourceTree = "<group>"; };
+		11D319732BF1B83900ABC5C3 /* MotionDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionDetection.swift; sourceTree = "<group>"; };
 		11D9D9482BBE74C30018B0B5 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		11D9D94A2BBE76C00018B0B5 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		11D9D94C2BBE770D0018B0B5 /* DatasetWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatasetWriter.swift; sourceTree = "<group>"; };
@@ -77,6 +81,8 @@
 				113A69682BB422DF000F59DA /* Assets.xcassets */,
 				113A69642BB422DD000F59DA /* AppDelegate.swift */,
 				11BA5A8B2BCDA29500938204 /* BoundingBox.swift */,
+				11D319732BF1B83900ABC5C3 /* MotionDetection.swift */,
+				117F49152BE2BA5000FCA65D /* ProgressDial.swift */,
 				11D9D9552BBE7D230018B0B5 /* View */,
 				114784A72BBFCB9800C26D2E /* Models */,
 				114784A82BBFCBC100C26D2E /* ViewModels */,
@@ -211,6 +217,8 @@
 				11D9D94B2BBE76C00018B0B5 /* AppState.swift in Sources */,
 				11D9D94D2BBE770D0018B0B5 /* DatasetWriter.swift in Sources */,
 				11D9D9522BBE7B020018B0B5 /* Manifest.swift in Sources */,
+				117F49162BE2BA5000FCA65D /* ProgressDial.swift in Sources */,
+				11D319742BF1B83900ABC5C3 /* MotionDetection.swift in Sources */,
 				11D9D9492BBE74C30018B0B5 /* ContentView.swift in Sources */,
 				11BA5A8C2BCDA29500938204 /* BoundingBox.swift in Sources */,
 				11D9D95C2BBE841D0018B0B5 /* Shaders.metal in Sources */,
@@ -275,7 +283,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -332,7 +340,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
