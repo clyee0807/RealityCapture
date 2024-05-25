@@ -17,7 +17,7 @@ class BlackMirrorzBoundingBox: Entity, HasAnchoring {
     private var modelEnties: [ModelEntity] = []
 
     // MARK: - Initialization
-    init(anchorPosition: SIMD3<Float>, points: [SIMD3<Float>], color: UIColor = .cyan) {
+    init(anchorPosition: SIMD3<Float>, points: [SIMD3<Float>], color: UIColor = .white) {
         super.init()
 
         var localMin = SIMD3<Float>(Float.greatestFiniteMagnitude, Float.greatestFiniteMagnitude, Float.greatestFiniteMagnitude)

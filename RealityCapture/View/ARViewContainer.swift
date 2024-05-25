@@ -12,7 +12,6 @@ import SceneKit
 //import ARKit
 
 struct ARViewContainer: UIViewRepresentable {
-//    static let logger = Logger()
     @ObservedObject var viewModel: ARViewModel
     
     init(_ vm: ARViewModel) {

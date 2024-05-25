@@ -8,16 +8,23 @@
 import Foundation
 import ARKit
 import RealityKit
-
+import SwiftUI
 
 class ProgressDial: Entity, HasAnchoring {
+    @ObservedObject var model: ARViewModel
+
+    var points: [ModelEntity] = []
+//    var dialPoints: [Int: PointStatus] = [:]
+
     var count: Int = 20
     var radius: Float = 0.15
     
-    var points: [ModelEntity] = []
     
-    init(anchorPosition: SIMD3<Float>) {
+    init(anchorPosition: SIMD3<Float>, model: ARViewModel) {
+        self.model = model
         super.init()
+        
+//        self.dialPoints = model.dialPoints
         
         let discMesh = MeshResource.generatePlane(width: 0.2, depth: 0.2, cornerRadius: 0.1)
         let material = SimpleMaterial(color: .red, isMetallic: false)
@@ -56,6 +63,7 @@ class ProgressDial: Entity, HasAnchoring {
             sphereEntity.name = "Point\(i)"
             
             points.append(sphereEntity)
+            model.dialPoints[i] = .initialized
             self.addChild(sphereEntity)
         }
     }
@@ -69,16 +77,42 @@ class ProgressDial: Entity, HasAnchoring {
         var cameraAngle = atan2(cameraPos.z, cameraPos.x) * 180 / Float.pi
         if cameraAngle < 0 { cameraAngle += 360 }
         
-        let cloestPointIndex = round(cameraAngle / interval)
+        let closestPointIndex = Int(round(cameraAngle / interval)) % count // ensure not out of range
+        // print("cameraAngle: \(cameraAngle), closetPointIndex: \(cloestPointIndex)")
         
-        // 把最近的point改成黃色
-        if let closestEntity = self.findEntity(named: "Point\(Int(cloestPointIndex))") as? ModelEntity {
-            let material = SimpleMaterial(color: .yellow, isMetallic: false)
-            closestEntity.model?.materials = [material]
-        }
+        
+        // Reset the color of all points to their default based on their captured state
+//        for (index, entity) in points.enumerated() {
+//            if let modelEntity = entity as? ModelEntity {
+//                let isCaptured = (model.dialPoints[index] == .captured)
+//                let material = SimpleMaterial(color: isCaptured ? .green : .red, isMetallic: false)
+//                modelEntity.model?.materials = [material]
+//                //model.dialPoints[index] = isCaptured ? .captured : .initialized
+//            }
+//        }
+//        
+//        // Set the closest point as pointed (yellow)
+//        if let closestEntity = points[closestPointIndex] as? ModelEntity {
+//            let material = SimpleMaterial(color: .yellow, isMetallic: false)
+//            closestEntity.model?.materials = [material]
+//            model.dialPoints[closestPointIndex] = .pointed
+//        }
     
-//        print("cameraAngle: \(cameraAngle), closetPointIndex: \(cloestPointIndex)")
         
-        return Int(cloestPointIndex)
+        return Int(closestPointIndex)
+    }
+    
+    public func updatePoints(pointIndex: Int) {
+        DispatchQueue.main.async {
+            for (index, entity) in self.points.enumerated() {
+                let isCaptured = self.model.dialPoints[index] == .captured
+                let isPointed = index == pointIndex
+                let color: UIColor = isCaptured ? .green : (isPointed ? .yellow : .red)
+                let material = SimpleMaterial(color: color, isMetallic: false)
+                (entity as? ModelEntity)?.model?.materials = [material]
+                self.model.dialPoints[index] = isCaptured ? .captured : (isPointed ? .pointed : .initialized)
+                
+            }
+        }
     }
 }

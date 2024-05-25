@@ -18,13 +18,26 @@ struct ContentView : View {
         _viewModel = StateObject(wrappedValue: vm)
     }
     
+    let accelerationThreshold = 0.02
+    
     var body: some View {
         ZStack{
             ZStack(alignment: .topTrailing) {
                 ARViewContainer(viewModel).edgesIgnoringSafeArea(.all)
                 VStack() {
                     HStack() {
-                        DebugMessageButton(model: viewModel)
+                        VStack(alignment:.leading) {
+                            if let acceleration = viewModel.getAcceleration() {
+                                let text = String(format: "Acceleration: %.3f G", acceleration)
+                                Text(text)
+                                    .foregroundColor(acceleration > accelerationThreshold ? .red : .primary)
+                            } else {
+                                Text("No Acceleration Data")
+                            }
+                            
+                            DebugMessageButton(model: viewModel)
+                        }
+                        
                         Spacer()
                         
                         VStack(alignment:.leading) {
@@ -170,13 +183,15 @@ struct DebugMessageButton: View {
     
     var body: some View {
         Button(action: {
-            print(ARWorldTrackingConfiguration.supportedVideoFormats)
+            model.stopMonitoringAcceleration()
+//            print(ARWorldTrackingConfiguration.supportedVideoFormats)
 //            print("Anchor position: \(model.anchorPosition)")
 //            print("Camera position: \(model.cameraPosition)")
 //            let size = model.calculateBoundingBoxSize()
 //            print("Bounding box size: (\(size.x), \(size.y), \(size.z))")
 //            print("originAnchor: \n \(viewModel.originAnchor)")
-//            print("cloestPoint: \(model.closestPoint)")
+            print("cloestPoint: \(model.closestPoint)")
+            print("dialPoints: \(model.dialPoints)")
         }) {
             Text("Debug")
         }
