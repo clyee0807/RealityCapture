@@ -7,21 +7,30 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		113A69652BB422DD000F59DA /* RealityCaptureApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 113A69642BB422DD000F59DA /* RealityCaptureApp.swift */; };
+		113A69652BB422DD000F59DA /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 113A69642BB422DD000F59DA /* AppDelegate.swift */; };
 		113A69672BB422DD000F59DA /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 113A69662BB422DD000F59DA /* ContentView.swift */; };
 		113A69692BB422DF000F59DA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 113A69682BB422DF000F59DA /* Assets.xcassets */; };
 		113A696C2BB422DF000F59DA /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 113A696B2BB422DF000F59DA /* Preview Assets.xcassets */; };
-		113A69742BB43332000F59DA /* AppDataModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 113A69732BB43332000F59DA /* AppDataModel.swift */; };
+		D9BD36DE2C416C4A00CC45A8 /* ARViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9BD36DD2C416C4A00CC45A8 /* ARViewModel.swift */; };
+		D9BD36E02C416CE600CC45A8 /* DatasetWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9BD36DF2C416CE600CC45A8 /* DatasetWriter.swift */; };
+		D9BD36E22C416D2100CC45A8 /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9BD36E12C416D2100CC45A8 /* Utils.swift */; };
+		D9BD36E52C416D9600CC45A8 /* Manifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9BD36E42C416D9600CC45A8 /* Manifest.swift */; };
+		D9BD36E72C41724000CC45A8 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9BD36E62C41724000CC45A8 /* AppState.swift */; };
+		D9BD36EA2C4175F300CC45A8 /* Zip in Frameworks */ = {isa = PBXBuildFile; productRef = D9BD36E92C4175F300CC45A8 /* Zip */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		113A69612BB422DD000F59DA /* RealityCapture.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RealityCapture.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		113A69642BB422DD000F59DA /* RealityCaptureApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealityCaptureApp.swift; sourceTree = "<group>"; };
+		113A69642BB422DD000F59DA /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		113A69662BB422DD000F59DA /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		113A69682BB422DF000F59DA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		113A696B2BB422DF000F59DA /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		113A69722BB432EA000F59DA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		113A69732BB43332000F59DA /* AppDataModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDataModel.swift; sourceTree = "<group>"; };
+		D9BD36DD2C416C4A00CC45A8 /* ARViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARViewModel.swift; sourceTree = "<group>"; };
+		D9BD36DF2C416CE600CC45A8 /* DatasetWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatasetWriter.swift; sourceTree = "<group>"; };
+		D9BD36E12C416D2100CC45A8 /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
+		D9BD36E42C416D9600CC45A8 /* Manifest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Manifest.swift; sourceTree = "<group>"; };
+		D9BD36E62C41724000CC45A8 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -29,6 +38,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D9BD36EA2C4175F300CC45A8 /* Zip in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -38,6 +48,7 @@
 		113A69582BB422DD000F59DA = {
 			isa = PBXGroup;
 			children = (
+				D9BD36E12C416D2100CC45A8 /* Utils.swift */,
 				113A69632BB422DD000F59DA /* RealityCapture */,
 				113A69622BB422DD000F59DA /* Products */,
 			);
@@ -54,11 +65,11 @@
 		113A69632BB422DD000F59DA /* RealityCapture */ = {
 			isa = PBXGroup;
 			children = (
+				D9BD36E32C416D8100CC45A8 /* Model */,
 				113A69752BB43362000F59DA /* view */,
+				D9BD36DC2C416C2A00CC45A8 /* ViewModel */,
 				113A69722BB432EA000F59DA /* Info.plist */,
-				113A69642BB422DD000F59DA /* RealityCaptureApp.swift */,
-				113A69662BB422DD000F59DA /* ContentView.swift */,
-				113A69732BB43332000F59DA /* AppDataModel.swift */,
+				113A69642BB422DD000F59DA /* AppDelegate.swift */,
 				113A69682BB422DF000F59DA /* Assets.xcassets */,
 				113A696A2BB422DF000F59DA /* Preview Content */,
 			);
@@ -76,8 +87,27 @@
 		113A69752BB43362000F59DA /* view */ = {
 			isa = PBXGroup;
 			children = (
+				113A69662BB422DD000F59DA /* ContentView.swift */,
 			);
 			path = view;
+			sourceTree = "<group>";
+		};
+		D9BD36DC2C416C2A00CC45A8 /* ViewModel */ = {
+			isa = PBXGroup;
+			children = (
+				D9BD36DD2C416C4A00CC45A8 /* ARViewModel.swift */,
+			);
+			path = ViewModel;
+			sourceTree = "<group>";
+		};
+		D9BD36E32C416D8100CC45A8 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				D9BD36E42C416D9600CC45A8 /* Manifest.swift */,
+				D9BD36DF2C416CE600CC45A8 /* DatasetWriter.swift */,
+				D9BD36E62C41724000CC45A8 /* AppState.swift */,
+			);
+			path = Model;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -96,6 +126,9 @@
 			dependencies = (
 			);
 			name = RealityCapture;
+			packageProductDependencies = (
+				D9BD36E92C4175F300CC45A8 /* Zip */,
+			);
 			productName = RealityCapture;
 			productReference = 113A69612BB422DD000F59DA /* RealityCapture.app */;
 			productType = "com.apple.product-type.application";
@@ -124,6 +157,9 @@
 				Base,
 			);
 			mainGroup = 113A69582BB422DD000F59DA;
+			packageReferences = (
+				D9BD36E82C4175F300CC45A8 /* XCRemoteSwiftPackageReference "Zip" */,
+			);
 			productRefGroup = 113A69622BB422DD000F59DA /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -150,9 +186,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				113A69742BB43332000F59DA /* AppDataModel.swift in Sources */,
+				D9BD36E52C416D9600CC45A8 /* Manifest.swift in Sources */,
+				D9BD36E02C416CE600CC45A8 /* DatasetWriter.swift in Sources */,
+				D9BD36E72C41724000CC45A8 /* AppState.swift in Sources */,
 				113A69672BB422DD000F59DA /* ContentView.swift in Sources */,
-				113A69652BB422DD000F59DA /* RealityCaptureApp.swift in Sources */,
+				113A69652BB422DD000F59DA /* AppDelegate.swift in Sources */,
+				D9BD36DE2C416C4A00CC45A8 /* ARViewModel.swift in Sources */,
+				D9BD36E22C416D2100CC45A8 /* Utils.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -360,6 +400,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		D9BD36E82C4175F300CC45A8 /* XCRemoteSwiftPackageReference "Zip" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/marmelroy/Zip";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.1.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		D9BD36E92C4175F300CC45A8 /* Zip */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D9BD36E82C4175F300CC45A8 /* XCRemoteSwiftPackageReference "Zip" */;
+			productName = Zip;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 113A69592BB422DD000F59DA /* Project object */;
 }
