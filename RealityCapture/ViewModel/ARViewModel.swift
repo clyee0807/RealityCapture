@@ -22,10 +22,16 @@ enum ModelState: String, CustomStringConvertible {
     var description: String { rawValue }
 
     case notSet
+    
+    case initialize
     case detecting
-    case capturing
-    case completed
-    case restart
+    case positioning
+    case capturing1
+    case capturing2
+    case training
+    case feedback
+    case readyToRecapture
+    
     case failed
 }
 
@@ -44,7 +50,7 @@ class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
     let logger = Logger(subsystem: AppDelegate.subsystem, category: "ARViewModel")
     
     @Published var appState = AppState()
-    @Published var state: ModelState = .notSet {
+    @Published var state: ModelState = .initialize {
         didSet {
             logger.debug("didSet AppDataModel.state to \(self.state)")
             if state != oldValue {
@@ -218,32 +224,46 @@ class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
         }
 
         switch toState {
-            case .notSet:
-                logger.debug("Set ModelState to notSet")
+        case .notSet:
+            logger.debug("Set ModelState to notSet")
+        case .initialize:
+            logger.debug("Set ModelState to initialize")
+        
+        case .detecting:
+            logger.debug("Set ModelState to detecting")
+            if let entity = originAnchor?.children.first(where: { $0.name == "ProgressDial"}) {
+                entity.removeFromParent()
+            } else {
+                logger.error("ProgressDial entity not found")
+            }
             
-            case .detecting:
-                logger.debug("Set ModelState to detecting")
-                if let entity = originAnchor?.children.first(where: { $0.name == "ProgressDial"}) {
-                    entity.removeFromParent()
-                } else {
-                    logger.error("ProgressDial entity not found")
-                }
+        case .positioning:
+            logger.debug("Set ModelState to positioning")
+
+        case .capturing1:
+            logger.debug("Set ModelState to capturing")
             
-            case .capturing:
-                logger.debug("Set ModelState to capturing")
-                
-                if let entity = originAnchor?.children.first(where: { $0.name == "ProgressDial"}) {
+            if let entity = originAnchor?.children.first(where: { $0.name == "ProgressDial"}) {
 
-                } else {
-                    logger.info("Create ProgressDial.")
-                    //createProgressDial()
-                }
+            } else {
+                logger.info("Create ProgressDial.")
+                //createProgressDial()
+            }
+        case .training:
+            logger.debug("Set ModelState to training")
 
-            case .failed:
-                logger.error("App failed state error")
-                // Shows error screen.
-            default:
-                break
+        case .feedback:
+            logger.debug("Set ModelState to feedback")
+            
+        case .readyToRecapture:
+            logger.debug("Set ModelState to readyToRecapture")
+
+
+        case .failed:
+            logger.error("App failed state error")
+            // Shows error screen.
+        default:
+            break
         }
     }
     
@@ -259,11 +279,11 @@ class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
 //    }
     
     
-//    func updateAnchorPosition(_ anchorPosition: SIMD3<Float>, originAnchor: AnchorEntity) {
-//        self.anchorPosition = anchorPosition
-//        self.originAnchor = originAnchor
-//        print("update origin anchor in viewModel: \(originAnchor.position)")
-//    }
+    func updateAnchorPosition(_ anchorPosition: SIMD3<Float>, originAnchor: AnchorEntity) {
+        self.anchorPosition = anchorPosition
+        self.originAnchor = originAnchor
+        print("update origin anchor in viewModel: \(originAnchor.position)")
+    }
 //    
 //    func calculateBoundingBoxSize() -> SIMD3<Float> {
 //        guard let lineXEntity = self.originAnchor?.findEntity(named: "line2") as? ModelEntity,

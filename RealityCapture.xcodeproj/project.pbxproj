@@ -17,6 +17,9 @@
 		D9BD36E52C416D9600CC45A8 /* Manifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9BD36E42C416D9600CC45A8 /* Manifest.swift */; };
 		D9BD36E72C41724000CC45A8 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9BD36E62C41724000CC45A8 /* AppState.swift */; };
 		D9BD36EA2C4175F300CC45A8 /* Zip in Frameworks */ = {isa = PBXBuildFile; productRef = D9BD36E92C4175F300CC45A8 /* Zip */; };
+		D9E59D8B2C443D140069DFBC /* ARViewContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9E59D8A2C443D140069DFBC /* ARViewContainer.swift */; };
+		D9E59D8D2C443DA90069DFBC /* Coordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9E59D8C2C443DA90069DFBC /* Coordinator.swift */; };
+		D9E59D8F2C443E0A0069DFBC /* BoundingBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9E59D8E2C443E0A0069DFBC /* BoundingBox.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,6 +34,9 @@
 		D9BD36E12C416D2100CC45A8 /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
 		D9BD36E42C416D9600CC45A8 /* Manifest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Manifest.swift; sourceTree = "<group>"; };
 		D9BD36E62C41724000CC45A8 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		D9E59D8A2C443D140069DFBC /* ARViewContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARViewContainer.swift; sourceTree = "<group>"; };
+		D9E59D8C2C443DA90069DFBC /* Coordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coordinator.swift; sourceTree = "<group>"; };
+		D9E59D8E2C443E0A0069DFBC /* BoundingBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoundingBox.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -88,6 +94,9 @@
 			isa = PBXGroup;
 			children = (
 				113A69662BB422DD000F59DA /* ContentView.swift */,
+				D9E59D8A2C443D140069DFBC /* ARViewContainer.swift */,
+				D9E59D8C2C443DA90069DFBC /* Coordinator.swift */,
+				D9E59D8E2C443E0A0069DFBC /* BoundingBox.swift */,
 			);
 			path = view;
 			sourceTree = "<group>";
@@ -187,12 +196,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				D9BD36E52C416D9600CC45A8 /* Manifest.swift in Sources */,
+				D9E59D8B2C443D140069DFBC /* ARViewContainer.swift in Sources */,
 				D9BD36E02C416CE600CC45A8 /* DatasetWriter.swift in Sources */,
 				D9BD36E72C41724000CC45A8 /* AppState.swift in Sources */,
 				113A69672BB422DD000F59DA /* ContentView.swift in Sources */,
+				D9E59D8F2C443E0A0069DFBC /* BoundingBox.swift in Sources */,
 				113A69652BB422DD000F59DA /* AppDelegate.swift in Sources */,
 				D9BD36DE2C416C4A00CC45A8 /* ARViewModel.swift in Sources */,
 				D9BD36E22C416D2100CC45A8 /* Utils.swift in Sources */,
+				D9E59D8D2C443DA90069DFBC /* Coordinator.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -330,11 +342,15 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = RealityCapture/Info.plist;
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "此應用需要使用相機來捕捉AR內容．";
+				INFOPLIST_KEY_NSFileProviderDomainUsageDescription = "Access your file~";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportsDocumentBrowser = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -360,11 +376,15 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = RealityCapture/Info.plist;
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "此應用需要使用相機來捕捉AR內容．";
+				INFOPLIST_KEY_NSFileProviderDomainUsageDescription = "Access your file~";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportsDocumentBrowser = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

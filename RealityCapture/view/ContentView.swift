@@ -1,9 +1,9 @@
-//
-//  ContentView.swift
-//  RealityCapture
-//
-//  Created by CGVLAB on 2024/3/27.
-//
+////
+////  ContentView.swift
+////  RealityCapture
+////
+////  Created by CGVLAB on 2024/3/27.
+////
 
 import SwiftUI
 
@@ -13,103 +13,133 @@ struct ContentView: View {
     let accelerationThreshold = 0.02
     
     init(viewModel vm: ARViewModel) {
-        print("Initialize ContentView!!")
+        print("Initialize ContentView, modelstate = \(vm.state)!!")
         _viewModel = StateObject(wrappedValue: vm)
     }
     
     var body: some View {
-        ZStack{
-            ZStack(alignment: .topTrailing) {
-                // ARViewContainer(viewModel).edgesIgnoringSafeArea(.all)
-                VStack() {
-                    HStack() {
-                        VStack(alignment:.leading) {
-                            if let acceleration = viewModel.getAcceleration() {
-                                let text = String(format: "Acceleration: %.3f G", acceleration)
-                                Text(text)
-                                    .foregroundColor(acceleration > accelerationThreshold ? .red : .primary)
-                            } else {
-                                Text("No Acceleration Data")
-                            }
-                            
-//                            DebugMessageButton(model: viewModel)
-                        }
-                        
-                        Spacer()
-                        
-                        VStack(alignment:.leading) {
-                            Text("\(viewModel.appState.trackingState)")
-                            if case .SessionStarted = viewModel.appState.writerState {
-                                Text("\(viewModel.datasetWriter.currentFrameCounter) Frames")
-                            }
-                            if viewModel.appState.supportsDepth {
-                                Text("Depth Supported")
-                            }
-                        }.padding()
-                    }
-                }
-            }
-            VStack {
-                Spacer()
-                HStack(spacing: 20) {
-                    // CaptureModeButton(model: viewModel)
-                    if viewModel.appState.writerState == .SessionNotStarted {
-                        Spacer()
-                        
-                        Button(action: {
-                            viewModel.resetWorldOrigin()
-                        }) {
-                            Text("Reset")
-                                .padding(.horizontal, 15)
-                                .padding(.vertical, 5)
-                        }
-                        .buttonStyle(.bordered)
-                        .buttonBorderShape(.capsule)
-                        
-                        Button(action: {
-                            do {
-                                try viewModel.datasetWriter.initializeProject()
-                                viewModel.state = .capturing
-                            }
-                            catch {
-                                print("\(error)")
-                            }
-                        }) {
-                            Text("Start")
-                                .padding(.horizontal, 15)
-                                .padding(.vertical, 5)
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .buttonBorderShape(.capsule)
-                    }
-                    
-                    if viewModel.appState.writerState == .SessionStarted {
+        ZStack {
+            Color.white.edgesIgnoringSafeArea(.all)
+            if viewModel.state == .initialize {
+                VStack {
+                    Spacer()
+                    HStack(spacing: 20) {
                         Spacer()
                         Button(action: {
-                            viewModel.datasetWriter.finalizeProject()
                             viewModel.state = .detecting
                         }) {
-                            Text("End")
-                                .padding(.horizontal, 20)
+                            Text("New Capture")
+                                .padding(.horizontal, 15)
                                 .padding(.vertical, 5)
+                                .foregroundColor(.black)
                         }
-                        .buttonStyle(.bordered)
-                        .buttonBorderShape(.capsule)
+                        .background(Color.blue)
+                        .cornerRadius(10)
+                        
                         Button(action: {
-                            viewModel.captureFrame()
+                            viewModel.state = .readyToRecapture
                         }) {
-                            Text("Capture")
-                                .padding(.horizontal, 20)
+                            Text("Continue Capture")
+                                .padding(.horizontal, 15)
                                 .padding(.vertical, 5)
+                                .foregroundColor(.black)
                         }
-                        .buttonStyle(.borderedProminent)
-                        .buttonBorderShape(.capsule)
+                        .background(Color.blue)
+                        .cornerRadius(10)
+                        Spacer()
                     }
-                    
+                    Spacer()
                 }
-                .padding()
+            } else {
+                ZStack(alignment: .topTrailing) {
+//                    ARViewContainer(viewModel).edgesIgnoringSafeArea(.all)
+                    VStack {
+                        HStack {
+                            VStack(alignment:.leading) {
+                                if let acceleration = viewModel.getAcceleration() {
+                                    let text = String(format: "Acceleration: %.3f G", acceleration)
+                                    Text(text)
+                                        .foregroundColor(acceleration > accelerationThreshold ? .red : .primary)
+                                } else {
+                                    Text("No Acceleration Data")
+                                }
+                            }
+                            Spacer()
+                            VStack(alignment:.leading) {
+                                Text("\(viewModel.appState.trackingState)")
+                                if case .SessionStarted = viewModel.appState.writerState {
+                                    Text("\(viewModel.datasetWriter.currentFrameCounter) Frames")
+                                }
+                                if viewModel.appState.supportsDepth {
+                                    Text("Depth Supported")
+                                }
+                            }.padding()
+                        }
+                    }
+                }
+                VStack {
+                    Spacer()
+                    HStack(spacing: 20) {
+                        if viewModel.appState.writerState == .SessionNotStarted {
+                            Spacer()
+                            Button(action: {
+                                viewModel.resetWorldOrigin()
+                            }) {
+                                Text("Reset")
+                                    .padding(.horizontal, 15)
+                                    .padding(.vertical, 5)
+                                    .foregroundColor(.black)
+                            }
+                            .background(Color.blue)
+                            .cornerRadius(10)
+                            
+                            Button(action: {
+                                do {
+                                    try viewModel.datasetWriter.initializeProject()
+                                    viewModel.state = .capturing1
+                                }
+                                catch {
+                                    print("\(error)")
+                                }
+                            }) {
+                                Text("Start")
+                                    .padding(.horizontal, 15)
+                                    .padding(.vertical, 5)
+                                    .foregroundColor(.black)
+                            }
+                            .background(Color.blue)
+                            .cornerRadius(10)
+                        }
+                        
+                        if viewModel.appState.writerState == .SessionStarted {
+                            Spacer()
+                            Button(action: {
+                                viewModel.datasetWriter.finalizeProject()
+                                viewModel.state = .detecting
+                            }) {
+                                Text("End")
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 5)
+                                    .foregroundColor(.black)
+                            }
+                            .background(Color.blue)
+                            .cornerRadius(10)
+                            Button(action: {
+                                viewModel.captureFrame()
+                            }) {
+                                Text("Capture")
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 5)
+                                    .foregroundColor(.black)
+                            }
+                            .background(Color.blue)
+                            .cornerRadius(10)
+                        }
+                    }
+                    .padding()
+                }
             }
-            .preferredColorScheme(.dark)
         }
+        .preferredColorScheme(.dark)
     }
 }
