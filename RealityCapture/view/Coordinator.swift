@@ -26,6 +26,7 @@ class Coordinator: NSObject {
         self.selectedEntity = nil
         
         self.originAnchor = self.parent.viewModel.originAnchor
+        
     }
     
     @objc func handleTap(_ sender: UITapGestureRecognizer) {
@@ -35,7 +36,7 @@ class Coordinator: NSObject {
         
         if let firstResult = results.first {
             if boundingBox == nil {
-                parent.viewModel.state = .detecting
+                parent.viewModel.state = .positioning
                 
                 let originAnchor = AnchorEntity(world: firstResult.worldTransform)
  
@@ -46,10 +47,6 @@ class Coordinator: NSObject {
                 )
                 originAnchor.position = anchorPosition
                 print("originAnchor.position: \(originAnchor.position)")
-                
-                // render a box at anchor position for debugging
-//                let anchorPoint = AnchorPositionPoint(anchorPosition: anchorPosition)
-//                originAnchor.addChild(anchorPoint)
                 
                 let boxSize: Float = 0.05
                 let points = [
@@ -62,7 +59,7 @@ class Coordinator: NSObject {
                     SIMD3<Float>(-boxSize,  boxSize,  boxSize),
                     SIMD3<Float>( boxSize,  boxSize,  boxSize)
                 ]
-                boundingBox = BlackMirrorzBoundingBox(anchorPosition: anchorPosition, points: points, color: .blue)
+                boundingBox = BlackMirrorzBoundingBox(anchorPosition: anchorPosition, points: points, color: .white)
                 boundingBox?.name = "BoundingBox"
                 
                 
@@ -87,7 +84,7 @@ class Coordinator: NSObject {
     private var initialY: CGFloat = 0.0
     private var hitEntity: Entity? = nil
     @objc func handlePan(_ sender: UIPanGestureRecognizer) {
-        if parent.viewModel.state == .detecting {
+        if parent.viewModel.state == .positioning {
             guard let arView = parent.viewModel.arView, let originAnchor = parent.viewModel.originAnchor else { return }
             let location = sender.location(in: arView)
             
@@ -96,9 +93,9 @@ class Coordinator: NSObject {
                 print("In Pan Gesture Began state, originAnchor.position: \(originAnchor.position)")
                 let hitTestResults = arView.hitTest(location, query: .nearest, mask: .all)
                 hitEntity = hitTestResults.first?.entity
-                if let entity = hitEntity {
+//                if let entity = hitEntity {
 //                    print("hitEntity: \(entity.name)")
-                }
+//                }
                 initialX = location.x
                 initialY = location.y
                 
@@ -136,6 +133,10 @@ class Coordinator: NSObject {
                 break
             }
         }
+    }
+    
+    func resetBoundingBox() {
+        boundingBox = nil
     }
     
     // MARK: - Editors
@@ -183,7 +184,7 @@ class Coordinator: NSObject {
                                                               newLength,
                                                               line.components[ModelComponent.self]?.mesh.bounds.extents.z ?? 0.001])
                            
-                let newModelComponent = ModelComponent(mesh: newLine, materials: [SimpleMaterial(color: .blue, isMetallic: false)])
+                let newModelComponent = ModelComponent(mesh: newLine, materials: [SimpleMaterial(color: .white, isMetallic: false)])
                 line.components.set(newModelComponent)
                 line.position = SIMD3<Float>(oldPosition.x, newPosition, oldPosition.z)
             }
@@ -234,7 +235,7 @@ class Coordinator: NSObject {
                                                              line.components[ModelComponent.self]?.mesh.bounds.extents.y ?? 0.001,
                                                              newLength])
                                                               
-                let newModelComponent = ModelComponent(mesh: newLine, materials: [SimpleMaterial(color: .blue, isMetallic: false)])
+                let newModelComponent = ModelComponent(mesh: newLine, materials: [SimpleMaterial(color: .white, isMetallic: false)])
                 line.components.set(newModelComponent)
                 line.position = SIMD3<Float>(oldPosition.x, oldPosition.y, newPosition)
             }
@@ -285,7 +286,7 @@ class Coordinator: NSObject {
                     line.components[ModelComponent.self]?.mesh.bounds.extents.y ?? 0.001,
                     line.components[ModelComponent.self]?.mesh.bounds.extents.z ?? 0.001])
                                                               
-                let newModelComponent = ModelComponent(mesh: newLine, materials: [SimpleMaterial(color: .blue, isMetallic: false)])
+                let newModelComponent = ModelComponent(mesh: newLine, materials: [SimpleMaterial(color: .white, isMetallic: false)])
                 line.components.set(newModelComponent)
                 line.position = SIMD3<Float>(newPosition, oldPosition.y, oldPosition.z)
             }

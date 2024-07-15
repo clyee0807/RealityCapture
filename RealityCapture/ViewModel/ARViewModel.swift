@@ -12,6 +12,7 @@ import ARKit
 import RealityKit
 import os
 import CoreMotion
+import SwiftUI
 
 enum AppError : Error {
     case projectAlreadyExists
@@ -67,7 +68,7 @@ class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
     init(datasetWriter: DatasetWriter) {
         self.datasetWriter = datasetWriter
         super.init()
-        //self.setupObservers()
+        self.setupObservers()
         
         if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
             print("ARWorldTrackingConfiguration: support depth!")
@@ -179,7 +180,10 @@ class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
         }
     }
     
-    
+    func setupObservers() {
+        datasetWriter.$writerState.sink {x in self.appState.writerState = x} .store(in: &cancellables)
+        datasetWriter.$currentFrameCounter.sink { x in self.appState.numFrames = x }.store(in: &cancellables)
+    }
     
     func createARConfiguration() -> ARWorldTrackingConfiguration {
         let configuration = ARWorldTrackingConfiguration()
@@ -231,8 +235,19 @@ class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
         
         case .detecting:
             logger.debug("Set ModelState to detecting")
+            if let originAnchor = originAnchor {
+                for child in originAnchor.children {
+                    print("\(child.name)")
+                    originAnchor.removeChild(child)
+                }
+                logger.debug("All children of originAnchor have been removed.")
+            } else {
+                logger.error("originAnchor is nil, cannot remove children.")
+            }
+            
             if let entity = originAnchor?.children.first(where: { $0.name == "ProgressDial"}) {
                 entity.removeFromParent()
+                logger.error("ProgressDial entity has been removed")
             } else {
                 logger.error("ProgressDial entity not found")
             }
@@ -304,3 +319,19 @@ class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
 //  
 //    }
 }
+
+//struct ContentView1: View {
+//    @StateObject private var viewModel = ARViewModel(datasetWriter: DatasetWriter())
+//    
+//    var body: some View {
+//        Text("Current state: \(viewModel.state.rawValue)")
+//            .foregroundColor(.blue)
+//            .padding()
+//    }
+//}
+//
+//struct ContentView_Previews2: PreviewProvider {
+//    static var previews: some View {
+//        ContentView1()
+//    }
+//}

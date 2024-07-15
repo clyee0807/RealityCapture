@@ -6,6 +6,8 @@
 ////
 
 import SwiftUI
+import ARKit
+import RealityKit
 
 struct ContentView: View {
     @StateObject private var viewModel: ARViewModel
@@ -23,15 +25,15 @@ struct ContentView: View {
             if viewModel.state == .initialize {
                 VStack {
                     Spacer()
-                    HStack(spacing: 20) {
+                    VStack(spacing: 20) {
                         Spacer()
                         Button(action: {
                             viewModel.state = .detecting
                         }) {
                             Text("New Capture")
                                 .padding(.horizontal, 15)
-                                .padding(.vertical, 5)
-                                .foregroundColor(.black)
+                                .padding(.vertical, 10)
+                                .foregroundColor(.white)
                         }
                         .background(Color.blue)
                         .cornerRadius(10)
@@ -41,8 +43,8 @@ struct ContentView: View {
                         }) {
                             Text("Continue Capture")
                                 .padding(.horizontal, 15)
-                                .padding(.vertical, 5)
-                                .foregroundColor(.black)
+                                .padding(.vertical, 10)
+                                .foregroundColor(.white)
                         }
                         .background(Color.blue)
                         .cornerRadius(10)
@@ -52,7 +54,7 @@ struct ContentView: View {
                 }
             } else {
                 ZStack(alignment: .topTrailing) {
-//                    ARViewContainer(viewModel).edgesIgnoringSafeArea(.all)
+                    ARViewContainer(viewModel).edgesIgnoringSafeArea(.all)
                     VStack {
                         HStack {
                             VStack(alignment:.leading) {
@@ -84,6 +86,7 @@ struct ContentView: View {
                             Spacer()
                             Button(action: {
                                 viewModel.resetWorldOrigin()
+                                viewModel.state = .detecting
                             }) {
                                 Text("Reset")
                                     .padding(.horizontal, 15)
@@ -143,3 +146,27 @@ struct ContentView: View {
         .preferredColorScheme(.dark)
     }
 }
+
+struct ContentView_Previews: PreviewProvider {
+    @StateObject private var viewModel: ARViewModel
+
+    static var previews: some View {
+        ContentView(viewModel: ARViewModel(datasetWriter: DatasetWriter()))
+            .previewInterfaceOrientation(.portrait)
+    }
+}
+
+
+//struct SimpleContentView: View {
+//    var body: some View {
+//        Text("Hello, World!")
+//            .foregroundColor(.blue)
+//            .padding()
+//    }
+//}
+//
+//struct SimpleContentView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        SimpleContentView()
+//    }
+//}

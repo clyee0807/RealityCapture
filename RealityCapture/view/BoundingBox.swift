@@ -98,12 +98,12 @@ class BlackMirrorzBoundingBox: Entity, HasAnchoring {
     private func createHeightEditor(anchorPosition: SIMD3<Float>) -> Entity {
         let boxSize: Float = 0.1
         
-        let editorMesh = MeshResource.generateBox(width: 0.03, height: 0.005, depth: 0.03, cornerRadius: 0.01)
-        let editorMaterial = SimpleMaterial(color: .blue, isMetallic: false)
+        let editorMesh = MeshResource.generateBox(width: 0.03, height: 0.002, depth: 0.03, cornerRadius: 0.001)
+        let editorMaterial = SimpleMaterial(color: .white, isMetallic: false)
         let editorEntity = ModelEntity(mesh: editorMesh, materials: [editorMaterial])
         editorEntity.name = "heightEditor"
         
-        editorEntity.collision = CollisionComponent(shapes: [.generateBox(size: SIMD3<Float>(0.03, 0.005, 0.03))])
+        editorEntity.collision = CollisionComponent(shapes: [.generateBox(size: SIMD3<Float>(0.03, 0.002, 0.03))])
         editorEntity.position = SIMD3<Float>(anchorPosition.x, anchorPosition.y + boxSize, anchorPosition.z)
         self.addChild(editorEntity)
         
@@ -113,8 +113,8 @@ class BlackMirrorzBoundingBox: Entity, HasAnchoring {
     private func createDepthEditor(anchorPosition: SIMD3<Float>) -> Entity {
         let boxSize: Float = 0.1
         
-        let editorMesh = MeshResource.generateBox(width: 0.005, height: 0.03, depth: 0.03, cornerRadius: 0.01)
-        let editorMaterial = SimpleMaterial(color: .blue, isMetallic: false)
+        let editorMesh = MeshResource.generateBox(width: 0.002, height: 0.03, depth: 0.03, cornerRadius: 0.001)
+        let editorMaterial = SimpleMaterial(color: .white, isMetallic: false)
         let editorEntity = ModelEntity(mesh: editorMesh, materials: [editorMaterial])
         editorEntity.name = "depthEditor"
         
@@ -128,8 +128,8 @@ class BlackMirrorzBoundingBox: Entity, HasAnchoring {
     private func createWidthEditor(anchorPosition: SIMD3<Float>) -> Entity {
         let boxSize: Float = 0.1
         
-        let editorMesh = MeshResource.generateBox(width: 0.03, height: 0.03, depth: 0.005, cornerRadius: 0.01)
-        let editorMaterial = SimpleMaterial(color: .blue, isMetallic: false)
+        let editorMesh = MeshResource.generateBox(width: 0.03, height: 0.03, depth: 0.002, cornerRadius: 0.001)
+        let editorMaterial = SimpleMaterial(color: .white, isMetallic: false)
         let editorEntity = ModelEntity(mesh: editorMesh, materials: [editorMaterial])
         editorEntity.name = "widthEditor"
         
@@ -151,7 +151,7 @@ class BoundingBoxHeightEditor: Entity, HasAnchoring {
         let boxSize: Float = 0.05
         
         let editorMesh = MeshResource.generateBox(width: 0.03, height: 0.03, depth: 0.03, cornerRadius: 0.01)
-        let editorMaterial = SimpleMaterial(color: .blue, isMetallic: false)
+        let editorMaterial = SimpleMaterial(color: .white, isMetallic: false)
         let editorEntity = ModelEntity(mesh: editorMesh, materials: [editorMaterial])
         
         editorEntity.position = SIMD3<Float>(anchorPosition.x, anchorPosition.y + boxSize, anchorPosition.z)

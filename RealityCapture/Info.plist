@@ -4,5 +4,9 @@
 <dict>
 	<key>UIFileSharingEnabled</key>
 	<true/>
+    <key>NSCameraUsageDescription</key>
+    <string>We need access to the camera for AR</string>
+    <key>NSMotionUsageDescription</key>
+    <string>We need access to motion sensors for AR</string>
 </dict>
 </plist>

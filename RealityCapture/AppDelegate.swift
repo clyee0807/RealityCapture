@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import UIKit
+import SceneKit
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -20,7 +22,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Create the SwiftUI view that provides the window contents.
         let ARviewModel = ARViewModel(datasetWriter: datasetWriter)
         let contentView = ContentView(viewModel: ARviewModel)
-
+        
         // Use a UIHostingController as window root view controller.
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIHostingController(rootView: contentView)
