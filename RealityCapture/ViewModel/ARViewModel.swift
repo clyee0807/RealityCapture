@@ -206,6 +206,19 @@ class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
         session?.run(config, options: [.resetTracking])
     }
     
+    func createCaptureTrack() {
+        guard let originAnchor = self.originAnchor, let anchorPosition = self.anchorPosition else {
+            logger.error("originAnchor or anchorPosition is nil")
+            return
+        }
+        
+        let captureTrack = CaptureTrack(anchorPosition: anchorPosition, originAnchor: originAnchor, model: self)
+        captureTrack.name = "CaptureTrack"
+        originAnchor.addChild(captureTrack)
+        logger.info("CaptureTrack created and added to originAnchor")
+        logger.info("Children of originAnchor: \(originAnchor.children.map { $0.name })")
+    }
+    
     // MARK: - ARSession
     // 每幀 ARframe 更新都會呼叫
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
@@ -236,20 +249,16 @@ class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
         case .detecting:
             logger.debug("Set ModelState to detecting")
             if let originAnchor = originAnchor {
-                for child in originAnchor.children {
-                    print("\(child.name)")
-                    originAnchor.removeChild(child)
+                if let entity = originAnchor.children.first(where: {$0.name == "CaptureTrack"}) {
+                    // logger.debug("Remove CaptureTrack")
+                    entity.removeFromParent()
                 }
+                
+                removeAllChildren(of: originAnchor)
                 logger.debug("All children of originAnchor have been removed.")
+                logger.debug("Children of originAnchor: \(originAnchor.children.map { $0.name })")
             } else {
                 logger.error("originAnchor is nil, cannot remove children.")
-            }
-            
-            if let entity = originAnchor?.children.first(where: { $0.name == "ProgressDial"}) {
-                entity.removeFromParent()
-                logger.error("ProgressDial entity has been removed")
-            } else {
-                logger.error("ProgressDial entity not found")
             }
             
         case .positioning:
@@ -258,11 +267,11 @@ class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
         case .capturing1:
             logger.debug("Set ModelState to capturing")
             
-            if let entity = originAnchor?.children.first(where: { $0.name == "ProgressDial"}) {
-
+            if let entity = originAnchor?.children.first(where: { $0.name == "CaptureTrack"}) {
+                logger.error("captureTrack is existed")
             } else {
-                logger.info("Create ProgressDial.")
-                //createProgressDial()
+                logger.info("Create captureTrack")
+                createCaptureTrack()
             }
         case .training:
             logger.debug("Set ModelState to training")
@@ -282,24 +291,21 @@ class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
         }
     }
     
-//    private func createProgressDial() {
-//        guard let originAnchor = self.originAnchor else {
-//            logger.error("originAnchor is nil")
-//            return
-//        }
-//        
-//        self.progressDial = ProgressDial(anchorPosition: anchorPosition!, model: self)
-//        self.progressDial?.name = "ProgressDial"
-//        originAnchor.addChild(self.progressDial!)
-//    }
-    
     
     func updateAnchorPosition(_ anchorPosition: SIMD3<Float>, originAnchor: AnchorEntity) {
         self.anchorPosition = anchorPosition
         self.originAnchor = originAnchor
         print("update origin anchor in viewModel: \(originAnchor.position)")
     }
-//    
+    
+    private func removeAllChildren(of entity: Entity) {
+        for child in entity.children {
+            print("removing: \(child.name)")
+            removeAllChildren(of: child) 
+            entity.removeChild(child)
+        }
+    }
+//
 //    func calculateBoundingBoxSize() -> SIMD3<Float> {
 //        guard let lineXEntity = self.originAnchor?.findEntity(named: "line2") as? ModelEntity,
 //            let lineYEntity = self.originAnchor?.findEntity(named: "line3") as? ModelEntity,

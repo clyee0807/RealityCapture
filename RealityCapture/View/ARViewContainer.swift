@@ -50,7 +50,6 @@ struct ARViewContainer: UIViewRepresentable {
     func updateUIView(_ uiView: ARView, context: Context) {}
     
     func makeCoordinator() -> Coordinator {
-//        Coordinator(self)
         let coordinator = Coordinator(self)
         viewModel.$state.sink { [weak coordinator] newState in
             if newState == .detecting {

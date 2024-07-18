@@ -11,6 +11,8 @@
 		113A69672BB422DD000F59DA /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 113A69662BB422DD000F59DA /* ContentView.swift */; };
 		113A69692BB422DF000F59DA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 113A69682BB422DF000F59DA /* Assets.xcassets */; };
 		113A696C2BB422DF000F59DA /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 113A696B2BB422DF000F59DA /* Preview Assets.xcassets */; };
+		D99FB26F2C45670400A78EA6 /* CaptureTrack.swift in Sources */ = {isa = PBXBuildFile; fileRef = D99FB26E2C45670400A78EA6 /* CaptureTrack.swift */; };
+		D99FB2822C495DA000A78EA6 /* hemisphere.usdz in Resources */ = {isa = PBXBuildFile; fileRef = D99FB2812C495DA000A78EA6 /* hemisphere.usdz */; };
 		D9BD36DE2C416C4A00CC45A8 /* ARViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9BD36DD2C416C4A00CC45A8 /* ARViewModel.swift */; };
 		D9BD36E02C416CE600CC45A8 /* DatasetWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9BD36DF2C416CE600CC45A8 /* DatasetWriter.swift */; };
 		D9BD36E22C416D2100CC45A8 /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9BD36E12C416D2100CC45A8 /* Utils.swift */; };
@@ -29,6 +31,8 @@
 		113A69682BB422DF000F59DA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		113A696B2BB422DF000F59DA /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		113A69722BB432EA000F59DA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		D99FB26E2C45670400A78EA6 /* CaptureTrack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureTrack.swift; sourceTree = "<group>"; };
+		D99FB2812C495DA000A78EA6 /* hemisphere.usdz */ = {isa = PBXFileReference; lastKnownFileType = file.usdz; name = hemisphere.usdz; path = ../../../../Downloads/hemisphere.usdz; sourceTree = "<group>"; };
 		D9BD36DD2C416C4A00CC45A8 /* ARViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARViewModel.swift; sourceTree = "<group>"; };
 		D9BD36DF2C416CE600CC45A8 /* DatasetWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatasetWriter.swift; sourceTree = "<group>"; };
 		D9BD36E12C416D2100CC45A8 /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
@@ -54,7 +58,6 @@
 		113A69582BB422DD000F59DA = {
 			isa = PBXGroup;
 			children = (
-				D9BD36E12C416D2100CC45A8 /* Utils.swift */,
 				113A69632BB422DD000F59DA /* RealityCapture */,
 				113A69622BB422DD000F59DA /* Products */,
 			);
@@ -72,10 +75,12 @@
 			isa = PBXGroup;
 			children = (
 				D9BD36E32C416D8100CC45A8 /* Model */,
-				113A69752BB43362000F59DA /* view */,
+				113A69752BB43362000F59DA /* View */,
 				D9BD36DC2C416C2A00CC45A8 /* ViewModel */,
 				113A69722BB432EA000F59DA /* Info.plist */,
 				113A69642BB422DD000F59DA /* AppDelegate.swift */,
+				D9BD36E12C416D2100CC45A8 /* Utils.swift */,
+				D99FB2812C495DA000A78EA6 /* hemisphere.usdz */,
 				113A69682BB422DF000F59DA /* Assets.xcassets */,
 				113A696A2BB422DF000F59DA /* Preview Content */,
 			);
@@ -90,15 +95,16 @@
 			path = "Preview Content";
 			sourceTree = "<group>";
 		};
-		113A69752BB43362000F59DA /* view */ = {
+		113A69752BB43362000F59DA /* View */ = {
 			isa = PBXGroup;
 			children = (
 				113A69662BB422DD000F59DA /* ContentView.swift */,
 				D9E59D8A2C443D140069DFBC /* ARViewContainer.swift */,
 				D9E59D8C2C443DA90069DFBC /* Coordinator.swift */,
 				D9E59D8E2C443E0A0069DFBC /* BoundingBox.swift */,
+				D99FB26E2C45670400A78EA6 /* CaptureTrack.swift */,
 			);
-			path = view;
+			path = View;
 			sourceTree = "<group>";
 		};
 		D9BD36DC2C416C2A00CC45A8 /* ViewModel */ = {
@@ -183,6 +189,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D99FB2822C495DA000A78EA6 /* hemisphere.usdz in Resources */,
 				113A696C2BB422DF000F59DA /* Preview Assets.xcassets in Resources */,
 				113A69692BB422DF000F59DA /* Assets.xcassets in Resources */,
 			);
@@ -196,6 +203,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D9BD36E52C416D9600CC45A8 /* Manifest.swift in Sources */,
+				D99FB26F2C45670400A78EA6 /* CaptureTrack.swift in Sources */,
 				D9E59D8B2C443D140069DFBC /* ARViewContainer.swift in Sources */,
 				D9BD36E02C416CE600CC45A8 /* DatasetWriter.swift in Sources */,
 				D9BD36E72C41724000CC45A8 /* AppState.swift in Sources */,
