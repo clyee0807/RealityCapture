@@ -20,7 +20,7 @@ class CaptureTrack: Entity, HasAnchoring {
     var anchorPosition: SIMD3<Float>
     
     var points: [ModelEntity] = []
-//    var dialPoints: [Int: PointStatus] = [:]
+//    var checkpoints: [Int: PointStatus] = [:]
 
     var count: Int = 20
     var radius: Float = 0.15
@@ -60,6 +60,7 @@ class CaptureTrack: Entity, HasAnchoring {
         if cameraAngle < 0 { cameraAngle += 360 }
         
         let closestPointIndex = Int(round(cameraAngle / interval)) % count // ensure not out of range
+//        print("closest point is point\(closestPointIndex)")
 
         return Int(closestPointIndex)
     }
@@ -67,13 +68,22 @@ class CaptureTrack: Entity, HasAnchoring {
     public func updatePoints(pointIndex: Int) {
         DispatchQueue.main.async {
             for (index, entity) in self.points.enumerated() {
-                let isCaptured = self.model.dialPoints[index] == .captured
-                let isPointed = index == pointIndex
-                let color: UIColor = isCaptured ? .green : (isPointed ? .yellow : .red)
+                let status = self.model.checkpoints[index]
+                
+                let color: UIColor
+                if status == .captured {
+                    color = .green   // captured point set to green
+                } else {
+                    let isPointed = (index == pointIndex)
+                    color = (isPointed ? .yellow : .red)
+                }
+                
                 let material = SimpleMaterial(color: color, isMetallic: false)
                 (entity as? ModelEntity)?.model?.materials = [material]
-                self.model.dialPoints[index] = isCaptured ? .captured : (isPointed ? .pointed : .initialized)
                 
+                if status != .captured {
+                    self.model.checkpoints[index] = (index == pointIndex) ? .pointed : .initialized
+                }
             }
         }
     }
@@ -102,7 +112,6 @@ class CaptureTrack: Entity, HasAnchoring {
                 modelEntity.name = filename
                 self.addChild(modelEntity)
                 self.logger.info("Children of captureTrack: \(self.children.map { $0.name })")
-                print("Info of modelEntity:\n \(modelEntity)")
             })
     }
     
@@ -129,7 +138,7 @@ class CaptureTrack: Entity, HasAnchoring {
             sphereEntity.name = "Point\(i)"
             
             points.append(sphereEntity)
-            model.dialPoints[i] = .initialized
+            model.checkpoints[i] = .initialized
             self.addChild(sphereEntity)
         }
     }

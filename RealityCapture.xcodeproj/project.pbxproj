@@ -13,6 +13,10 @@
 		113A696C2BB422DF000F59DA /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 113A696B2BB422DF000F59DA /* Preview Assets.xcassets */; };
 		D99FB26F2C45670400A78EA6 /* CaptureTrack.swift in Sources */ = {isa = PBXBuildFile; fileRef = D99FB26E2C45670400A78EA6 /* CaptureTrack.swift */; };
 		D99FB2822C495DA000A78EA6 /* hemisphere.usdz in Resources */ = {isa = PBXBuildFile; fileRef = D99FB2812C495DA000A78EA6 /* hemisphere.usdz */; };
+		D99FB2842C4D395700A78EA6 /* InitializeStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D99FB2832C4D395700A78EA6 /* InitializeStateView.swift */; };
+		D99FB2862C4D3A6700A78EA6 /* TrainingStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D99FB2852C4D3A6700A78EA6 /* TrainingStateView.swift */; };
+		D99FB2882C4D402400A78EA6 /* FeedbackStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D99FB2872C4D402400A78EA6 /* FeedbackStateView.swift */; };
+		D99FB28A2C4D40E200A78EA6 /* ReadyToRecaptureStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D99FB2892C4D40E200A78EA6 /* ReadyToRecaptureStateView.swift */; };
 		D9BD36DE2C416C4A00CC45A8 /* ARViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9BD36DD2C416C4A00CC45A8 /* ARViewModel.swift */; };
 		D9BD36E02C416CE600CC45A8 /* DatasetWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9BD36DF2C416CE600CC45A8 /* DatasetWriter.swift */; };
 		D9BD36E22C416D2100CC45A8 /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9BD36E12C416D2100CC45A8 /* Utils.swift */; };
@@ -33,6 +37,10 @@
 		113A69722BB432EA000F59DA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		D99FB26E2C45670400A78EA6 /* CaptureTrack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureTrack.swift; sourceTree = "<group>"; };
 		D99FB2812C495DA000A78EA6 /* hemisphere.usdz */ = {isa = PBXFileReference; lastKnownFileType = file.usdz; name = hemisphere.usdz; path = ../../../../Downloads/hemisphere.usdz; sourceTree = "<group>"; };
+		D99FB2832C4D395700A78EA6 /* InitializeStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InitializeStateView.swift; sourceTree = "<group>"; };
+		D99FB2852C4D3A6700A78EA6 /* TrainingStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingStateView.swift; sourceTree = "<group>"; };
+		D99FB2872C4D402400A78EA6 /* FeedbackStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackStateView.swift; sourceTree = "<group>"; };
+		D99FB2892C4D40E200A78EA6 /* ReadyToRecaptureStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadyToRecaptureStateView.swift; sourceTree = "<group>"; };
 		D9BD36DD2C416C4A00CC45A8 /* ARViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARViewModel.swift; sourceTree = "<group>"; };
 		D9BD36DF2C416CE600CC45A8 /* DatasetWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatasetWriter.swift; sourceTree = "<group>"; };
 		D9BD36E12C416D2100CC45A8 /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
@@ -103,6 +111,10 @@
 				D9E59D8C2C443DA90069DFBC /* Coordinator.swift */,
 				D9E59D8E2C443E0A0069DFBC /* BoundingBox.swift */,
 				D99FB26E2C45670400A78EA6 /* CaptureTrack.swift */,
+				D99FB2832C4D395700A78EA6 /* InitializeStateView.swift */,
+				D99FB2852C4D3A6700A78EA6 /* TrainingStateView.swift */,
+				D99FB2872C4D402400A78EA6 /* FeedbackStateView.swift */,
+				D99FB2892C4D40E200A78EA6 /* ReadyToRecaptureStateView.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -205,11 +217,15 @@
 				D9BD36E52C416D9600CC45A8 /* Manifest.swift in Sources */,
 				D99FB26F2C45670400A78EA6 /* CaptureTrack.swift in Sources */,
 				D9E59D8B2C443D140069DFBC /* ARViewContainer.swift in Sources */,
+				D99FB2882C4D402400A78EA6 /* FeedbackStateView.swift in Sources */,
 				D9BD36E02C416CE600CC45A8 /* DatasetWriter.swift in Sources */,
 				D9BD36E72C41724000CC45A8 /* AppState.swift in Sources */,
 				113A69672BB422DD000F59DA /* ContentView.swift in Sources */,
+				D99FB2862C4D3A6700A78EA6 /* TrainingStateView.swift in Sources */,
+				D99FB2842C4D395700A78EA6 /* InitializeStateView.swift in Sources */,
 				D9E59D8F2C443E0A0069DFBC /* BoundingBox.swift in Sources */,
 				113A69652BB422DD000F59DA /* AppDelegate.swift in Sources */,
+				D99FB28A2C4D40E200A78EA6 /* ReadyToRecaptureStateView.swift in Sources */,
 				D9BD36DE2C416C4A00CC45A8 /* ARViewModel.swift in Sources */,
 				D9BD36E22C416D2100CC45A8 /* Utils.swift in Sources */,
 				D9E59D8D2C443DA90069DFBC /* Coordinator.swift in Sources */,
