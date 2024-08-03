@@ -52,7 +52,10 @@ class CameraViewModel: ObservableObject {
     /// This property  maintains references to the location of each image and its corresponding metadata in
     /// the file system.
     @Published var captureFolderState: CaptureFolderState?
+    
+    @Published var info: String = ""
 
+    @Published var parametersLocked: Bool = false;
     /// This property returns the current capture mode. This property doesn't indicate whether the capture
     /// timer is currently running. When you set this to `.manual`, it cancels the timer used by automatic
     /// mode.
@@ -96,22 +99,34 @@ class CameraViewModel: ObservableObject {
 
     var readyToCapture: Bool {
         return captureFolderState != nil &&
-            captureFolderState!.captures.count < CameraViewModel.maxPhotosAllowed &&
+//            captureFolderState!.captures.count < CameraViewModel.maxPhotosAllowed &&
             self.inProgressPhotoCaptureDelegates.count < 2
     }
 
     var captureDir: URL? {
         return captureFolderState?.captureDir
     }
-
-    static let maxPhotosAllowed = 250
+    
+    static let maxPhotosAllowed = 3
     static let recommendedMinPhotos = 30
     static let recommendedMaxPhotos = 200
-    static let defaultAutomaticCaptureIntervalSecs: Double = 3.0
+    static let frame_num: Double = 120
+    static let rotate_time: Double = 108
+    static var defaultAutomaticCaptureIntervalSecs: Double = rotate_time / frame_num
+    
+    func setIntervalSecs(sec: Double)
+    {
+        CameraViewModel.defaultAutomaticCaptureIntervalSecs = sec
+        print("CameraViewModel.defaultAutomaticCaptureIntervalSecs: \(CameraViewModel.defaultAutomaticCaptureIntervalSecs)")
+        captureMode = .automatic(everySecs: CameraViewModel.defaultAutomaticCaptureIntervalSecs)
+    }
+    func getIntervalSecs() -> Double
+    {
+        return CameraViewModel.defaultAutomaticCaptureIntervalSecs
+    }
 
     init() {
         session = AVCaptureSession()
-
         // This is an asynchronous call that begins all setup. It sets
         // up the camera device, motion device (gravity), and ensures correct
         // permissions.
@@ -127,6 +142,212 @@ class CameraViewModel: ObservableObject {
             captureMode = .automatic(everySecs: CameraViewModel.defaultAutomaticCaptureIntervalSecs)
         case .automatic(_):
             captureMode = .manual
+        }
+    }
+    func getWhiteBalanceGains() -> Double
+    {
+        let currentGains = self.videoDeviceInput?.device.deviceWhiteBalanceGains
+            
+        let temperatureAndTint = self.videoDeviceInput?.device.temperatureAndTintValues(for: currentGains!)
+        
+        return Double(temperatureAndTint!.temperature)
+    }
+    
+    func setWhiteBalanceGains(temperature: Float) {
+        let tint = calculateTint(for: temperature)
+        
+        let temperatureAndTint = AVCaptureDevice.WhiteBalanceTemperatureAndTintValues(temperature: temperature, tint: tint)
+        
+        let whiteBalanceGains = self.videoDeviceInput?.device.deviceWhiteBalanceGains(for: temperatureAndTint)
+        
+        let validGains = clampGains(whiteBalanceGains!, for: self.videoDeviceInput!.device)
+        
+        do {
+            try self.videoDeviceInput?.device.lockForConfiguration()
+            let duration = self.videoDeviceInput?.device.exposureDuration
+            let iso: Float = (self.videoDeviceInput?.device.iso)!
+            
+            
+            let currentISO = self.videoDeviceInput?.device.iso
+            guard let currentExposureDuration = self.videoDeviceInput?.device.exposureDuration else {
+                        print("can't get currentExposureDuration")
+                        self.videoDeviceInput?.device.unlockForConfiguration()
+                        return
+                    }
+            guard let currentWhiteBalanceGains = self.videoDeviceInput?.device.deviceWhiteBalanceGains else {
+                        print("can't get currentExposureDuration")
+                        self.videoDeviceInput?.device.unlockForConfiguration()
+                        return
+                    }
+            if (parametersLocked){
+                print("parametersLocked: \(parametersLocked)")
+                print("current iso \(String(describing: iso)), current_duration: \(String(describing: duration))")
+                let settings: [String: Any] = [
+                            "iso": currentISO!,
+                            "exposureDuration": CMTimeGetSeconds(currentExposureDuration),
+                            "whiteBalanceRedGain": currentWhiteBalanceGains.redGain,
+                            "whiteBalanceGreenGain": currentWhiteBalanceGains.greenGain,
+                            "whiteBalanceBlueGain": currentWhiteBalanceGains.blueGain
+                        ]
+                let data = try JSONSerialization.data(withJSONObject: settings, options: .prettyPrinted)
+                let filePath = self.captureDir!.appendingPathComponent("cameraSettings.json")
+                
+                print("[toggleCameraParametersLock] save to \(filePath)")
+                try data.write(to: filePath)
+                self.videoDeviceInput?.device.setWhiteBalanceModeLocked(with: validGains, completionHandler: nil)
+                self.info = String(describing: validGains)
+            }
+            self.videoDeviceInput?.device.unlockForConfiguration()
+        } catch {
+            print("Failed to lock device for configuration: \(error)")
+        }
+    }
+    
+    func calculateTint(for temperature: Float) -> Float {
+        let baseTint: Float = 0
+        let temperatureFactor: Float = (temperature - 5000) / 1000
+        return baseTint + temperatureFactor * 10
+    }
+
+    func clampGains(_ gains: AVCaptureDevice.WhiteBalanceGains, for device: AVCaptureDevice) -> AVCaptureDevice.WhiteBalanceGains {
+        var clampedGains = gains
+        clampedGains.redGain = max(1.0, min(gains.redGain, device.maxWhiteBalanceGain))
+        clampedGains.greenGain = max(1.0, min(gains.greenGain, device.maxWhiteBalanceGain))
+        clampedGains.blueGain = max(1.0, min(gains.blueGain, device.maxWhiteBalanceGain))
+        return clampedGains
+    }
+
+    func toggleCameraParametersLock() {
+        dispatchPrecondition(condition: .onQueue(DispatchQueue.main))
+        parametersLocked = !parametersLocked
+        do{
+            //acquire exclusive access to the device’s configuration properties
+            try self.videoDeviceInput?.device.lockForConfiguration()
+            self.videoDeviceInput?.device.exposureMode = parametersLocked ? .locked : .continuousAutoExposure
+            self.videoDeviceInput?.device.whiteBalanceMode = parametersLocked ? .locked : .continuousAutoWhiteBalance
+            logger.log("switch Exposure to \(self.parametersLocked)")
+            let duration = self.videoDeviceInput?.device.exposureDuration
+            let iso: Float = (self.videoDeviceInput?.device.iso)!
+            
+            
+            let currentISO = self.videoDeviceInput?.device.iso
+            guard let currentExposureDuration = self.videoDeviceInput?.device.exposureDuration else {
+                        print("can't get currentExposureDuration")
+                        self.videoDeviceInput?.device.unlockForConfiguration()
+                        return
+                    }
+            guard let currentWhiteBalanceGains = self.videoDeviceInput?.device.deviceWhiteBalanceGains else {
+                        print("can't get currentExposureDuration")
+                        self.videoDeviceInput?.device.unlockForConfiguration()
+                        return
+                    }
+            self.info = String(describing: currentWhiteBalanceGains)
+            
+            self.videoDeviceInput?.device.unlockForConfiguration()
+            if (parametersLocked){
+                print("parametersLocked: \(parametersLocked)")
+                print("current iso \(String(describing: iso)), current_duration: \(String(describing: duration))")
+                let settings: [String: Any] = [
+                            "iso": currentISO!,
+                            "exposureDuration": CMTimeGetSeconds(currentExposureDuration),
+                            "whiteBalanceRedGain": currentWhiteBalanceGains.redGain,
+                            "whiteBalanceGreenGain": currentWhiteBalanceGains.greenGain,
+                            "whiteBalanceBlueGain": currentWhiteBalanceGains.blueGain
+                        ]
+                let data = try JSONSerialization.data(withJSONObject: settings, options: .prettyPrinted)
+                let filePath = self.captureDir!.appendingPathComponent("cameraSettings.json")
+                
+                print("[toggleCameraParametersLock] save to \(filePath)")
+                try data.write(to: filePath)
+            }
+        }
+        catch{
+            logger.log("ERROR: \(String(describing: error.localizedDescription))")
+        }
+    }
+    
+    func applyCurrentCameraSettings(captureDirPath: URL)
+    {
+        do {
+            let pathComponents = captureDirPath.pathComponents
+            let subPathComponents = pathComponents.prefix(pathComponents.count - 1)
+            var newPath = subPathComponents.joined(separator: "/")
+            print("[applyCurrentCameraSettings] newPath: \(newPath)")
+            let secondToLastComponent = pathComponents[pathComponents.count - 1]
+            print("[applyCurrentCameraSettings] secondToLastComponent: \(secondToLastComponent)")
+            
+            // Assuming you want to add a specific date-time string as in your comment
+            newPath += "/\(secondToLastComponent)"
+            print("[applyCurrentCameraSettings] newPath 2: \(newPath)")
+            let newPathURL = URL(fileURLWithPath: newPath)
+            let filePath = newPathURL.appendingPathComponent("cameraSettings.json")
+
+            
+            
+            print("[applyCurrentCameraSettings] read from \(filePath)")
+            let data = try Data(contentsOf: filePath)
+                // turn jsonfile into dictionary!
+                guard let settings = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
+                      let iso = settings["iso"] as? Float,
+                      let exposureDurationSeconds = settings["exposureDuration"] as? Double,
+                      let redGain = settings["whiteBalanceRedGain"] as? Float,
+                      let greenGain = settings["whiteBalanceGreenGain"] as? Float,
+                      let blueGain = settings["whiteBalanceBlueGain"] as? Float else {
+                    print("can't read camera setting!!!")
+                    return
+                }
+            
+            let exposureDuration = CMTimeMakeWithSeconds(exposureDurationSeconds, preferredTimescale: 1000000)
+            let whiteBalanceGains = AVCaptureDevice.WhiteBalanceGains(redGain: redGain, greenGain: greenGain, blueGain: blueGain)
+            self.info = String(describing: whiteBalanceGains)
+            print("parametersLocked: \(parametersLocked)")
+            parametersLocked = true
+            print("current iso \(String(describing: iso)), current_duration: \(String(describing: exposureDuration))")
+            print("white balance gains \(String(describing: whiteBalanceGains))")
+            guard let device = self.videoDeviceInput?.device else {
+                    print("can't get device!!!")
+                    return
+                }
+                
+            let minISO = device.activeFormat.minISO
+            let maxISO = device.activeFormat.maxISO
+            let clampedISO = min(max(iso, minISO), maxISO)
+            
+            
+            try self.videoDeviceInput?.device.lockForConfiguration()
+            
+            if ((self.videoDeviceInput?.device.isExposureModeSupported(.custom)) != nil) {
+                self.videoDeviceInput?.device.setExposureModeCustom(duration: exposureDuration, iso: clampedISO) { time in
+                    print("exposure set!!!")
+                }
+            }
+
+            if ((self.videoDeviceInput?.device.isWhiteBalanceModeSupported(.locked)) != nil) {
+                self.videoDeviceInput?.device.setWhiteBalanceModeLocked(with: whiteBalanceGains) { time in
+                    print("White balance set!!!")
+                }
+            }
+            
+            if (parametersLocked){
+                print("parametersLocked: \(parametersLocked)")
+                print("current iso \(String(describing: iso)), current_duration: \(String(describing: duration))")
+                let settings: [String: Any] = [
+                            "iso": iso,
+                            "exposureDuration": exposureDurationSeconds,
+                            "whiteBalanceRedGain": redGain,
+                            "whiteBalanceGreenGain": greenGain,
+                            "whiteBalanceBlueGain": blueGain
+                        ]
+                let data = try JSONSerialization.data(withJSONObject: settings, options: .prettyPrinted)
+                let filePath = self.captureDir!.appendingPathComponent("cameraSettings.json")
+                
+                print("[toggleCameraParametersLock] save to \(filePath)")
+                try data.write(to: filePath)
+            }
+            self.videoDeviceInput?.device.unlockForConfiguration()
+        }
+        catch{
+            logger.log("ERROR: \(String(describing: error.localizedDescription))")
         }
     }
 
@@ -264,7 +485,14 @@ class CameraViewModel: ObservableObject {
     // This is the unique identifier for the next photo. This value must be
     // unique within a session.
     private var photoId: UInt32 = 0
-
+    
+    //new
+    ///exposure, white balance parameters
+    private var duration: CMTime? = AVCaptureDevice.currentExposureDuration
+    private var iso: Float? = AVCaptureDevice.currentISO
+    private var whiteBalanceGains: AVCaptureDevice.WhiteBalanceGains? = AVCaptureDevice.currentWhiteBalanceGains
+    
+    //modified .quality => .speed
     private var photoQualityPrioritizationMode: AVCapturePhotoOutput.QualityPrioritization =
         .quality
 
@@ -344,9 +572,8 @@ class CameraViewModel: ObservableObject {
             var photoSettings = AVCapturePhotoSettings()
 
             // Request HEIF photos if supported and enable high-resolution photos.
-            if  self.photoOutput.availablePhotoCodecTypes.contains(.hevc) {
-                photoSettings = AVCapturePhotoSettings(
-                    format: [AVVideoCodecKey: AVVideoCodecType.hevc])
+            if self.photoOutput.availablePhotoCodecTypes.contains(.hevc) {
+                photoSettings = AVCapturePhotoSettings(format: [AVVideoCodecKey: AVVideoCodecType.hevc])
             }
 
             // Turn off the flash. The app relies on ambient lighting to avoid specular highlights.
@@ -356,7 +583,19 @@ class CameraViewModel: ObservableObject {
 
             // Turn on high-resolution, depth data, and quality prioritzation mode.
             photoSettings.isHighResolutionPhotoEnabled = true
-            photoSettings.isDepthDataDeliveryEnabled = self.photoOutput.isDepthDataDeliveryEnabled
+
+            if #available(iOS 15.4, *) {
+                // Enable depth data delivery if supported
+                if self.photoOutput.isDepthDataDeliverySupported {
+                    photoSettings.isDepthDataDeliveryEnabled = true
+                } else {
+                    logger.warning("Depth data delivery is not supported.")
+                }
+            } else {
+                // For older iOS versions, enable depth data delivery if supported
+                photoSettings.isDepthDataDeliveryEnabled = self.photoOutput.isDepthDataDeliveryEnabled
+            }
+            
             photoSettings.photoQualityPrioritization = self.photoQualityPrioritizationMode
 
             // Request that the camera embed a depth map into the HEIC output file.
@@ -364,14 +603,14 @@ class CameraViewModel: ObservableObject {
 
             // Specify a preview image.
             if !photoSettings.__availablePreviewPhotoPixelFormatTypes.isEmpty {
-                photoSettings.previewPhotoFormat =
-                    [kCVPixelBufferPixelFormatTypeKey:
-                        photoSettings.__availablePreviewPhotoPixelFormatTypes.first!,
-                     kCVPixelBufferWidthKey: self.previewWidth,
-                     kCVPixelBufferHeightKey: self.previewHeight] as [String: Any]
+                photoSettings.previewPhotoFormat = [
+                    kCVPixelBufferPixelFormatTypeKey: photoSettings.__availablePreviewPhotoPixelFormatTypes.first!,
+                    kCVPixelBufferWidthKey: self.previewWidth,
+                    kCVPixelBufferHeightKey: self.previewHeight
+                ] as [String: Any]
                 logger.log("Found available previewPhotoFormat: \(String(describing: photoSettings.previewPhotoFormat))")
             } else {
-                logger.warning("Can't find preview photo formats!  Not setting...")
+                logger.warning("Can't find preview photo formats! Not setting...")
             }
 
             // Tell the camera to embed a preview image in the output file.
@@ -382,8 +621,7 @@ class CameraViewModel: ObservableObject {
             ]
 
             DispatchQueue.main.async {
-                self.isHighQualityMode = photoSettings.isHighResolutionPhotoEnabled
-                    && photoSettings.photoQualityPrioritization == .quality
+                self.isHighQualityMode = photoSettings.isHighResolutionPhotoEnabled && photoSettings.photoQualityPrioritization == .quality
             }
 
             self.photoId += 1
@@ -393,12 +631,12 @@ class CameraViewModel: ObservableObject {
             // The photo output holds a weak reference to the photo capture
             // delegate, so it also stores it in an array, which maintains a
             // strong reference so the system won't deallocate it.
-            self.inProgressPhotoCaptureDelegates[
-                photoCaptureProcessor.requestedPhotoSettings.uniqueID] = photoCaptureProcessor
+            self.inProgressPhotoCaptureDelegates[photoCaptureProcessor.requestedPhotoSettings.uniqueID] = photoCaptureProcessor
             logger.log("inProgressCaptures=\(self.inProgressPhotoCaptureDelegates.count)")
             self.photoOutput.capturePhoto(with: photoSettings, delegate: photoCaptureProcessor)
         }
     }
+
 
     private func makeNewPhotoCaptureProcessor(
         photoId: UInt32, photoSettings: AVCapturePhotoSettings) -> PhotoCaptureProcessor {
@@ -481,6 +719,80 @@ class CameraViewModel: ObservableObject {
             setupResult = .notAuthorized
         }
     }
+    
+    
+    
+    //new
+    ///if the device support custom exposure mode, apply specified duration and iso, else set to locked exposure mode.
+    private func setExposure(device: AVCaptureDevice) {
+        duration = AVCaptureDevice.currentExposureDuration
+        iso = AVCaptureDevice.currentISO
+//        private var whiteBalanceGains: AVCaptureDevice.WhiteBalanceGains? = AVCaptureDevice.currentWhiteBalanceGains
+        info = String(self.iso!)
+        
+        if device.isExposureModeSupported(.custom) {
+            logger.log("setExposure")
+            do{
+                try device.lockForConfiguration()
+                    
+                device.setExposureModeCustom(duration: self.duration!, iso: self.iso!) { (_) in
+                    logger.log("Done Exposure")
+                }
+                device.unlockForConfiguration()
+            }
+            catch{
+                logger.log("ERROR: \(String(describing: error.localizedDescription))")
+            }
+        }
+        else {
+            do{
+                try device.lockForConfiguration()
+                
+                logger.log("custom exposure mode not supported.")
+                device.exposureMode = .locked
+                
+                device.unlockForConfiguration()
+            }
+            catch{
+                logger.log("ERROR: \(String(describing: error.localizedDescription))")
+            }
+        }
+    }
+    
+    //new
+    ///if the device support locked white balance mode, apply specified white balance gains, else set to auto white balance mode.
+    private func setWhiteBalance(device: AVCaptureDevice) {
+        ///set white balance gains (locked mode)
+        whiteBalanceGains = AVCaptureDevice.currentWhiteBalanceGains
+        logger.log("setWhiteBalance")
+        
+        if device.isWhiteBalanceModeSupported(.locked) {
+            do{
+                try device.lockForConfiguration()
+                    
+                device.setWhiteBalanceModeLocked(with: self.whiteBalanceGains!) { (_) in
+                    logger.log("Done white balance")
+                }
+                device.unlockForConfiguration()
+            }
+            catch{
+                logger.log("ERROR: \(String(describing: error.localizedDescription))")
+            }
+        }
+        else {
+            do{
+                try device.lockForConfiguration()
+                    
+                logger.log("locked white balance mode not supported.")
+                device.whiteBalanceMode = .autoWhiteBalance
+                    
+                device.unlockForConfiguration()
+            }
+            catch{
+                logger.log("ERROR: \(String(describing: error.localizedDescription))")
+            }
+        }
+    }
 
     private func configureSession() {
         // Make sure setup hasn't failed.
@@ -498,7 +810,14 @@ class CameraViewModel: ObservableObject {
         do {
             let videoDeviceInput = try AVCaptureDeviceInput(
                 device: getVideoDeviceForPhotogrammetry())
-
+            
+            logger.log("before setting!")
+//            new
+//            setExposure(device: videoDeviceInput.device)
+//            setWhiteBalance(device: videoDeviceInput.device)
+            logger.log("after setting!")
+            
+            
             if session.canAddInput(videoDeviceInput) {
                 session.addInput(videoDeviceInput)
                 self.videoDeviceInput = videoDeviceInput
@@ -532,14 +851,26 @@ class CameraViewModel: ObservableObject {
         // the capture buttons.
         setupResult = .success
     }
-
+    
     private func addPhotoOutputOrThrow() throws {
         if session.canAddOutput(photoOutput) {
             session.addOutput(photoOutput)
 
-            // Prefer high resolution and maximum quality, with depth.
+            // Prefer high resolution and maximum quality, with depth.
             photoOutput.isHighResolutionCaptureEnabled = true
-            photoOutput.isDepthDataDeliveryEnabled = photoOutput.isDepthDataDeliverySupported
+            
+            if #available(iOS 15.4, *) {
+                // Check if LiDAR depth data delivery is supported
+                if photoOutput.isDepthDataDeliverySupported {
+                    photoOutput.isDepthDataDeliveryEnabled = true
+                } else {
+                    logger.warning("LiDAR depth data delivery is not supported.")
+                }
+            } else {
+                // For older iOS versions, enable depth data delivery if supported
+                photoOutput.isDepthDataDeliveryEnabled = photoOutput.isDepthDataDeliverySupported
+            }
+            
             photoOutput.maxPhotoQualityPrioritization = .quality
         } else {
             logger.error("Could not add photo output to the session")
@@ -547,31 +878,42 @@ class CameraViewModel: ObservableObject {
         }
     }
 
-    /// This method checks for a depth-capable dual rear camera and, if found, returns an `AVCaptureDevice`.
     private func getVideoDeviceForPhotogrammetry() throws -> AVCaptureDevice {
         var defaultVideoDevice: AVCaptureDevice?
 
-        // Specify dual camera to get access to depth data.
-        if let dualCameraDevice = AVCaptureDevice.default(.builtInDualCamera, for: .video,
-                                                          position: .back) {
-            logger.log(">>> Got back dual camera!")
-            defaultVideoDevice = dualCameraDevice
-        } else if let dualWideCameraDevice = AVCaptureDevice.default(.builtInDualWideCamera,
-                                                                for: .video,
-                                                                position: .back) {
-            logger.log(">>> Got back dual wide camera!")
-            defaultVideoDevice = dualWideCameraDevice
-       } else if let backWideCameraDevice = AVCaptureDevice.default(.builtInWideAngleCamera,
-                                                                     for: .video,
-                                                                     position: .back) {
-            logger.log(">>> Can't find a depth-capable camera: using wide back camera!")
-            defaultVideoDevice = backWideCameraDevice
+        // try to get LiDAR depth camera
+        if #available(iOS 15.4, *) {
+            if let lidarDevice = AVCaptureDevice.default(.builtInLiDARDepthCamera, for: .video, position: .back) {
+                logger.log(">>> Got LiDAR depth camera!")
+                defaultVideoDevice = lidarDevice
+            } else {
+                logger.error("LiDAR depth camera is unavailable.")
+                throw SessionSetupError.configurationFailed
+            }
+        } else {
+            // Fallback on earlier versions
+            // Specify dual camera to get access to depth data.
+            if let dualCameraDevice = AVCaptureDevice.default(.builtInDualCamera, for: .video,
+                                                              position: .back) {
+                logger.log(">>> Got back dual camera!")
+                defaultVideoDevice = dualCameraDevice
+            } else if let dualWideCameraDevice = AVCaptureDevice.default(.builtInDualWideCamera,
+                                                                    for: .video,
+                                                                    position: .back) {
+                logger.log(">>> Got back dual wide camera!")
+                defaultVideoDevice = dualWideCameraDevice
+           } else if let backWideCameraDevice = AVCaptureDevice.default(.builtInWideAngleCamera,
+                                                                         for: .video,
+                                                                         position: .back) {
+                logger.log(">>> Can't find a depth-capable camera: using wide back camera!")
+                defaultVideoDevice = backWideCameraDevice
+            }
         }
-
         guard let videoDevice = defaultVideoDevice else {
-            logger.error("Back video device is unavailable.")
-            throw SessionSetupError.configurationFailed
-        }
+                    logger.error("Back video device is unavailable.")
+                    throw SessionSetupError.configurationFailed
+                }
+        
         return videoDevice
     }
 }

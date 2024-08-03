@@ -52,7 +52,7 @@ struct CaptureGalleryView: View {
             Color(red: 0, green: 0, blue: 0.01, opacity: 1).ignoresSafeArea(.all)
             
             // Create a hidden navigation link for the toolbar item.
-            NavigationLink(destination: CaptureFoldersView(model: model),
+            NavigationLink(destination: CaptureFoldersView(model: model, isFromButton: false),
                            isActive: self.$showCaptureFolderView) {
                 EmptyView()
             }
@@ -120,26 +120,46 @@ struct NewSessionButtonView: View {
     
     /// This is an environment variable that the capture gallery view uses to store state.
     @Environment(\.presentationMode) private var presentation
+    @State private var showAlert = false
+    @State private var lastCaptureUrl: URL? = nil
     
     var usingCurrentCaptureFolder: Bool = true
     
     var body: some View {
-        // Only show the new session if the user is viewing the current
-        // capture directory.
-        if usingCurrentCaptureFolder {
-            Menu(content: {
-                Button(action: {
-                    model.requestNewCaptureFolder()
-                    // Navigate back to the main scan page.
-                    presentation.wrappedValue.dismiss()
-                }) {
-                    Label("New Session", systemImage: "camera")
+            // Only show the new session if the user is viewing the current
+            // capture directory.
+            if usingCurrentCaptureFolder {
+                Menu(content: {
+                    Button(action: {
+                        lastCaptureUrl = model.captureDir
+                        model.requestNewCaptureFolder()
+                        // Navigate back to the main scan page
+                        showAlert = true
+                    }) {
+                        Label("New Session", systemImage: "camera")
+                    }
+                }, label: {
+                    Image(systemName: "plus.circle")
+                })
+                .alert(isPresented: $showAlert) {
+                    Alert(
+                        title: Text("Notification"),
+                        message: Text("Applying the current camera setting?"),
+                        primaryButton: .default(Text("Yes")) {
+                            model.applyCurrentCameraSettings(captureDirPath: lastCaptureUrl!)
+                            presentation.wrappedValue.dismiss()
+                        },
+                        secondaryButton: .default(Text("No"))
+                        {
+                            if model.parametersLocked == true {
+                                model.toggleCameraParametersLock()
+                            }
+                            presentation.wrappedValue.dismiss()
+                        }
+                    )
                 }
-            }, label: {
-                Image(systemName: "plus.circle")
-            })
+            }
         }
-    }
 }
 
 /// This cell displays a single thumbnail image with its metadata annotated on it.

@@ -16,6 +16,8 @@ private let logger = Logger(subsystem: "com.apple.sample.CaptureSample",
 struct CaptureFoldersView: View {
     @ObservedObject var model: CameraViewModel
     @State var captureFolders: [URL] = []
+    var isFromButton: Bool
+    
     private var publisher: AnyPublisher<[URL], Never> {
         CaptureFolderState.requestCaptureFolderListing()
             .receive(on: DispatchQueue.main)
@@ -28,7 +30,7 @@ struct CaptureFoldersView: View {
             Color(red: 0, green: 0, blue: 0.001, opacity: 1).edgesIgnoringSafeArea(/*@START_MENU_TOKEN@*/.all/*@END_MENU_TOKEN@*/)
             List {
                 ForEach(captureFolders, id: \.self) { folder in
-                    CaptureFolderItem(model: model, url: folder)
+                    CaptureFolderItem(model: model, url: folder, isFromButton: isFromButton)
                 }
                 .onDelete(perform: { indexSet in
                     let foldersToDelete = indexSet.map { captureFolders[$0] }
@@ -65,15 +67,33 @@ struct CaptureFolderItem: View {
     
     @ObservedObject private var model: CameraViewModel
     @StateObject private var ownedCaptureFolderState: CaptureFolderState
+    var isFromButton: Bool
+    @Environment(\.presentationMode) private var presentation
     
-    init(model: CameraViewModel, url: URL) {
+    init(model: CameraViewModel, url: URL, isFromButton: Bool) {
         self.model = model
         self._ownedCaptureFolderState = StateObject(wrappedValue: CaptureFolderState(url: url))
+        self.isFromButton = isFromButton
     }
     
     var body: some View {
-        NavigationLink(destination: CaptureGalleryView(model: model,
-                                                       observing: ownedCaptureFolderState)) {
+        if isFromButton {
+            Button(action: {
+                print("Selected folder URL: \(ownedCaptureFolderState.captureDir!)")
+                model.applyCurrentCameraSettings(captureDirPath: ownedCaptureFolderState.captureDir!)
+                self.presentation.wrappedValue.dismiss()
+                //for closing the current view. => back to main capture view.
+            }) {
+                folderContent
+            }
+        } else {
+            NavigationLink(destination: CaptureGalleryView(model: model,
+                                                           observing: ownedCaptureFolderState)) {
+                folderContent
+            }
+        }
+    }
+    private var folderContent: some View {
             HStack {
                 if !ownedCaptureFolderState.captures.isEmpty {
                     AsyncThumbnailView(url: ownedCaptureFolderState.captures[0].imageUrl)
@@ -96,5 +116,4 @@ struct CaptureFolderItem: View {
                 }
             }
         }
-    }
 }

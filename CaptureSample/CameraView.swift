@@ -15,54 +15,105 @@ struct CameraView: View {
     @ObservedObject var model: CameraViewModel
     @State private var showInfo: Bool = false
     
+    
     let aspectRatio: CGFloat = 4.0 / 3.0
     let previewCornerRadius: CGFloat = 15.0
     
+//    var body: some View {
+//        NavigationView {
+//            GeometryReader { geometryReader in
+//                // Place the CameraPreviewView at the bottom of the stack.
+//                ZStack {
+//                    Color.black.edgesIgnoringSafeArea(.all)
+//                    
+//                    // Center the preview view vertically. Place a clip frame
+//                    // around the live preview and round the corners.
+//                    VStack {
+//                        // add info at here.
+//                        Spacer()
+//                        CameraPreviewView(session: model.session)
+//                            .frame(width: geometryReader.size.width,
+//                                   height: geometryReader.size.width * aspectRatio,
+//                                   alignment: .center)
+//                            .clipShape(RoundedRectangle(cornerRadius: previewCornerRadius))
+//                            .onAppear { model.startSession() }
+//                            .onDisappear { model.pauseSession() }
+//                            .overlay(
+//                                Image("ObjectReticle")
+//                                    .resizable()
+//                                    .scaledToFit()
+//                                    .padding(.all))
+//                        
+//                        Spacer()
+//                    }
+//                    VStack {
+//                        // The app shows this view when showInfo is true.
+//                        ScanToolbarView(model: model, showInfo: $showInfo).padding(.horizontal)
+//                        if showInfo {
+//                            InfoPanelView(model: model)
+//                                .padding(.horizontal).padding(.top)
+//                        }
+//                        Spacer()
+//                        CaptureButtonPanelView(model: model, width: geometryReader.size.width)
+//                    }
+//                }
+//            }
+//            .navigationTitle(Text("Scan"))
+//            .navigationBarTitle("Scan")
+//            .navigationBarHidden(true)
+//            .navigationBarTitleDisplayMode(.inline)
+//        }
+//    }
     var body: some View {
-        NavigationView {
-            GeometryReader { geometryReader in
-                // Place the CameraPreviewView at the bottom of the stack.
-                ZStack {
-                    Color.black.edgesIgnoringSafeArea(.all)
-                    
-                    // Center the preview view vertically. Place a clip frame
-                    // around the live preview and round the corners.
-                    VStack {
-                        Spacer()
-                        CameraPreviewView(session: model.session)
-                            .frame(width: geometryReader.size.width,
-                                   height: geometryReader.size.width * aspectRatio,
-                                   alignment: .center)
-                            .clipShape(RoundedRectangle(cornerRadius: previewCornerRadius))
-                            .onAppear { model.startSession() }
-                            .onDisappear { model.pauseSession() }
-                            .overlay(
-                                Image("ObjectReticle")
-                                    .resizable()
-                                    .scaledToFit()
-                                    .padding(.all))
+            NavigationView {
+                GeometryReader { geometryReader in
+                    ZStack {
+                        Color.black.edgesIgnoringSafeArea(.all)
                         
-                        Spacer()
-                    }
-                    
-                    VStack {
-                        // The app shows this view when showInfo is true.
-                        ScanToolbarView(model: model, showInfo: $showInfo).padding(.horizontal)
-                        if showInfo {
-                            InfoPanelView(model: model)
-                                .padding(.horizontal).padding(.top)
+                        VStack {
+                            Spacer(minLength: 50)
+                            CameraPreviewView(session: model.session)
+                                .frame(width: geometryReader.size.width,
+                                       height: geometryReader.size.width * aspectRatio,
+                                       alignment: .center)
+                                .clipShape(RoundedRectangle(cornerRadius: previewCornerRadius))
+                                .onAppear { model.startSession() }
+                                .onDisappear { model.pauseSession() }
+                                .overlay(
+                                    Image("ObjectReticle")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .padding(.all))
+                            Spacer()
+                            ParametersbarView(model: model)
+                                .padding(.vertical, 1)
+                            
+//                            Spacer()
+                            CaptureButtonPanelView(model: model, width: geometryReader.size.width)
+                                .padding(.bottom)
                         }
-                        Spacer()
-                        CaptureButtonPanelView(model: model, width: geometryReader.size.width)
+                        
+                        VStack {
+                            // The app shows this view when showInfo is true.
+                            ScanToolbarView(model: model, showInfo: $showInfo)
+                                .padding(.horizontal)
+                            
+                            if showInfo {
+                                InfoPanelView(model: model)
+                                    .padding(.horizontal)
+                                    .padding(.top)
+                            }
+                            
+                            Spacer()
+                        }
                     }
                 }
+                .navigationTitle(Text("Scan"))
+                .navigationBarTitle("Scan")
+                .navigationBarHidden(true)
+                .navigationBarTitleDisplayMode(.inline)
             }
-            .navigationTitle(Text("Scan"))
-            .navigationBarTitle("Scan")
-            .navigationBarHidden(true)
-            .navigationBarTitleDisplayMode(.inline)
         }
-    }
 }
 
 /// This view displays the image thumbnail, capture button, and capture mode button.
@@ -96,12 +147,190 @@ struct CaptureButtonPanelView: View {
     }
 }
 
+struct SliderView: View {
+    @ObservedObject var model: CameraViewModel
+//    @Binding var sliderValue: Double
+    @State private var sliderValue = 0.0
+    @Binding var sliderType: Int
+    
+    var body: some View {
+            VStack {
+                Text("Adjust Parameter")
+                    .font(.caption)
+                    .foregroundColor(.black)
+                    .padding()
+                
+                Text("\(Double(sliderValue))")
+                    .font(.caption)
+                    .foregroundColor(.black)
+                if sliderType == 0
+                {
+                    Slider(value: $sliderValue, in: 3000...8000, step: 50)
+                        .padding()
+                        .onChange(of: sliderValue) { newValue in
+                                if sliderType == 0 {
+                                    print("newValue: \(newValue)")
+                                    model.setWhiteBalanceGains(temperature: Float(newValue))
+                                }
+                            }
+                        .onAppear {
+                                sliderValue = model.getWhiteBalanceGains()
+                            }
+                }
+                else if sliderType == 1
+                {
+                    Slider(value: $sliderValue, in: 0.0...5.0, step: 0.05)
+                        .padding()
+                        .onChange(of: sliderValue) { newValue in
+                                if sliderType == 1 {
+                                    print("newValue: \(newValue)")
+                                    model.setIntervalSecs(sec: newValue)
+                                }
+                            }
+                }
+                else if sliderType == 2
+                {
+                    Slider(value: $sliderValue, in: 0.0...5.0, step: 0.05)
+                        .padding()
+                        .onChange(of: sliderValue) { newValue in
+                                if sliderType == 2 {
+                                    print("newValue: \(newValue)")
+                                    model.setIntervalSecs(sec: newValue)
+                                }
+                            }
+                        .onAppear {
+                                    sliderValue = model.getIntervalSecs()
+                                }
+                }
+                Text("Value: \(Int(sliderValue))")
+                    .font(.caption)
+                    .foregroundColor(.black)
+                    .padding()
+            }
+            .padding()
+            .background(Color.white)
+        }
+}
+
+struct ParametersbarView: View{
+    @ObservedObject var model: CameraViewModel
+    @State private var showSlider = false
+    @State private var showSliderType = 0
+    var body: some View {
+        ZStack {
+//            RoundedRectangle(cornerRadius: 10)
+//                            .fill(Color.gray.opacity(0.2))
+//                            .frame(height: 60)
+//                            .padding(.horizontal, 20)
+            HStack {
+                Spacer()
+                Button(action: {
+                    print("Pressed Info!")
+                    withAnimation {
+                        showSlider.toggle()
+                        showSliderType = 0
+                        if model.parametersLocked != true
+                        {
+                            model.toggleCameraParametersLock()
+                        }
+                    }
+                }, label: {
+                    Image(systemName: "plus.slash.minus").foregroundColor(Color.blue)
+                        .font(.largeTitle)
+                        .padding()
+                        .overlay(
+//                            RoundedRectangle(cornerRadius: 10)
+//                                .stroke(Color.gray, lineWidth: 2)
+                            RoundedRectangle(cornerRadius: 10)
+                                            .fill(Color.gray.opacity(0.2))
+                                            .frame(width: 60, height: 60)
+                                            .padding(.horizontal, 20)
+                            
+                        )
+                })
+                Spacer()
+                Button(action: {
+                    print("Pressed Info!")
+                    withAnimation {
+                        showSlider.toggle()
+                        showSliderType = 1
+                        if model.parametersLocked != true
+                        {
+                            model.toggleCameraParametersLock()
+                        }
+                    }
+                }, label: {
+                    Image(systemName: "sun.max.fill").foregroundColor(Color.blue)
+                        .font(.largeTitle)
+                        .padding()
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                            .fill(Color.gray.opacity(0.2))
+                                            .frame(width: 60, height: 60)
+                                            .padding(.horizontal, 20)
+                        )
+                })
+                Spacer()
+                Button(action: {
+                    print("Pressed toggle!")
+                    withAnimation {
+                        showSlider.toggle()
+                        showSliderType = 2
+                    }
+                }, label: {
+                    Image(systemName: "timer").foregroundColor(Color.blue)
+                        .font(.largeTitle)
+                        .padding()
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                            .fill(Color.gray.opacity(0.2))
+                                            .frame(width: 60, height: 60)
+                                            .padding(.horizontal, 20)
+                        )
+                })
+                Spacer()
+                Button(action: {
+                    print("Pressed toggle!")
+                    withAnimation {
+                        model.toggleCameraParametersLock()
+                    }
+                }, label: {
+                    Image(systemName: model.parametersLocked ? "lock.fill" : "lock.open.fill").foregroundColor(Color.blue)
+                        .font(.largeTitle)
+                        .padding()
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                            .fill(Color.gray.opacity(0.2))
+                                            .frame(width: 60, height: 60)
+                                            .padding(.horizontal, 20)
+                        )
+                })
+            }
+            .padding(.horizontal, 5)
+        }
+        ZStack{
+            if showSlider {
+                SliderView(model: model, sliderType: $showSliderType)
+                        .frame(width: 300, height: 100)
+                        .background(Color.white)
+                        .cornerRadius(10)
+                        .shadow(radius: 10)
+                        .transition(.move(edge: .bottom))
+                        .zIndex(1)
+                        .padding(.top, 10)
+                }
+        }
+    }
+}
+
 /// This is a custom "toolbar" view the app displays at the top of the screen. It includes the current capture
 /// status and buttons for help and detailed information. The user can tap the entire top panel to
 /// open or close the information panel.
 struct ScanToolbarView: View {
     @ObservedObject var model: CameraViewModel
     @Binding var showInfo: Bool
+    @State private var showCaptureFolderView = false
+    @State private var isFromButton = false
     
     var body: some View {
         ZStack {
@@ -115,7 +344,34 @@ struct ScanToolbarView: View {
                 }, label: {
                     Image(systemName: "info.circle").foregroundColor(Color.blue)
                 })
+//                Button(action: {
+//                    print("Pressed toggle!")
+//                    withAnimation {
+//                        model.toggleCameraParametersLock()
+//                    }
+//                }, label: {
+//                    Image(systemName: model.parametersLocked ? "lock.fill" : "lock.open.fill").foregroundColor(Color.blue)
+//                })
+                Text(model.info)
                 Spacer()
+                
+                Button(action: {
+                    print("Pressed file!")
+                    withAnimation {
+                        self.showCaptureFolderView = true
+                        self.isFromButton = true
+                    }
+                }, label: {
+                    Image(systemName: "folder.fill").foregroundColor(Color.blue)
+                })
+                
+                NavigationLink(destination: CaptureFoldersView(model: model, isFromButton: isFromButton),
+                                       isActive: self.$showCaptureFolderView) {
+                            EmptyView()
+                        }
+                        .frame(width: 0, height: 0)
+                        .disabled(true)
+
                 NavigationLink(destination: HelpPageView()) {
                     Image(systemName: "questionmark.circle")
                         .foregroundColor(Color.blue)
