@@ -9,3 +9,9 @@ Capture high-quality images with depth and gravity data to use with RealityKit O
 ## Configure the Sample Code Project
 
 This project requires an iPhone or iPad with dual rear cameras.
+
+## Revised version (24/08)
+### Add some icon to fix the camera parameters.
+    - white balance
+    - exposure
+    - time interval of capturing for auto mode.
