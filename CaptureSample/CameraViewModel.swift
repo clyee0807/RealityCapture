@@ -154,6 +154,14 @@ class CameraViewModel: ObservableObject {
     }
     
     func setWhiteBalanceGains(temperature: Float) {
+        guard self.videoDeviceInput != nil else {
+            logger.error("cannot find videoDeviceInput in function setWhiteBalanceGains.")
+            return
+        }
+//        if(!self.videoDeviceInput!.device.isLockingWhiteBalanceWithCustomDeviceGainsSupported){
+//            logger.warning("isLockingWhiteBalanceWithCustomDeviceGains is not supported")
+//            return
+//        }
         let tint = calculateTint(for: temperature)
         
         let temperatureAndTint = AVCaptureDevice.WhiteBalanceTemperatureAndTintValues(temperature: temperature, tint: tint)
@@ -226,10 +234,11 @@ class CameraViewModel: ObservableObject {
             self.videoDeviceInput?.device.exposureMode = parametersLocked ? .locked : .continuousAutoExposure
             self.videoDeviceInput?.device.whiteBalanceMode = parametersLocked ? .locked : .continuousAutoWhiteBalance
             logger.log("switch Exposure to \(self.parametersLocked)")
+            //to print out
             let duration = self.videoDeviceInput?.device.exposureDuration
             let iso: Float = (self.videoDeviceInput?.device.iso)!
             
-            
+            //to pack into json
             let currentISO = self.videoDeviceInput?.device.iso
             guard let currentExposureDuration = self.videoDeviceInput?.device.exposureDuration else {
                         print("can't get currentExposureDuration")
@@ -254,6 +263,7 @@ class CameraViewModel: ObservableObject {
                             "whiteBalanceGreenGain": currentWhiteBalanceGains.greenGain,
                             "whiteBalanceBlueGain": currentWhiteBalanceGains.blueGain
                         ]
+                print(settings)
                 let data = try JSONSerialization.data(withJSONObject: settings, options: .prettyPrinted)
                 let filePath = self.captureDir!.appendingPathComponent("cameraSettings.json")
                 
@@ -316,13 +326,13 @@ class CameraViewModel: ObservableObject {
             
             try self.videoDeviceInput?.device.lockForConfiguration()
             
-            if ((self.videoDeviceInput?.device.isExposureModeSupported(.custom)) != nil) {
+            if ((self.videoDeviceInput?.device.isExposureModeSupported(.custom)) != false) {
                 self.videoDeviceInput?.device.setExposureModeCustom(duration: exposureDuration, iso: clampedISO) { time in
                     print("exposure set!!!")
                 }
             }
 
-            if ((self.videoDeviceInput?.device.isWhiteBalanceModeSupported(.locked)) != nil) {
+            if (self.videoDeviceInput?.device.isLockingWhiteBalanceWithCustomDeviceGainsSupported != false) {
                 self.videoDeviceInput?.device.setWhiteBalanceModeLocked(with: whiteBalanceGains) { time in
                     print("White balance set!!!")
                 }
@@ -338,6 +348,7 @@ class CameraViewModel: ObservableObject {
                             "whiteBalanceGreenGain": greenGain,
                             "whiteBalanceBlueGain": blueGain
                         ]
+                print(settings)
                 let data = try JSONSerialization.data(withJSONObject: settings, options: .prettyPrinted)
                 let filePath = self.captureDir!.appendingPathComponent("cameraSettings.json")
                 
@@ -473,6 +484,22 @@ class CameraViewModel: ObservableObject {
         if isAutoCaptureActive {
             stopAutomaticCapture()
         }
+    }
+    
+    func isSettingExposureAvalible() -> Bool {
+        guard self.videoDeviceInput != nil else {
+            logger.error("cannot find videoDeviceInput in function isSettingExposureEnabled")
+            return false
+        }
+        return self.videoDeviceInput!.device.isExposureModeSupported(.custom)
+    }
+    
+    func isSettingWhiteBalanceAvalible() -> Bool {
+        guard self.videoDeviceInput != nil else {
+            logger.error("cannot find videoDeviceInput in function isSettingWhiteBalanceEnabled")
+            return false
+        }
+        return self.videoDeviceInput!.device.isLockingWhiteBalanceWithCustomDeviceGainsSupported
     }
 
     // MARK: - Private State
@@ -862,6 +889,7 @@ class CameraViewModel: ObservableObject {
             if #available(iOS 15.4, *) {
                 // Check if LiDAR depth data delivery is supported
                 if photoOutput.isDepthDataDeliverySupported {
+                    //case: my iPhone 12
                     photoOutput.isDepthDataDeliveryEnabled = true
                 } else {
                     logger.warning("LiDAR depth data delivery is not supported.")
@@ -882,27 +910,23 @@ class CameraViewModel: ObservableObject {
         var defaultVideoDevice: AVCaptureDevice?
 
         // try to get LiDAR depth camera
-        if #available(iOS 15.4, *) {
-            if let lidarDevice = AVCaptureDevice.default(.builtInLiDARDepthCamera, for: .video, position: .back) {
-                logger.log(">>> Got LiDAR depth camera!")
-                defaultVideoDevice = lidarDevice
-            } else {
-                logger.error("LiDAR depth camera is unavailable.")
-                throw SessionSetupError.configurationFailed
-            }
-        } else {
+        if #available(iOS 15.4, *), let lidarDevice = AVCaptureDevice.default(.builtInLiDARDepthCamera, for: .video, position: .back) {
+            logger.log(">>> Got LiDAR depth camera!")
+            defaultVideoDevice = lidarDevice
             // Fallback on earlier versions
             // Specify dual camera to get access to depth data.
+        } else {
+            logger.error("LiDAR depth camera is unavailable.")
             if let dualCameraDevice = AVCaptureDevice.default(.builtInDualCamera, for: .video,
                                                               position: .back) {
                 logger.log(">>> Got back dual camera!")
                 defaultVideoDevice = dualCameraDevice
             } else if let dualWideCameraDevice = AVCaptureDevice.default(.builtInDualWideCamera,
-                                                                    for: .video,
-                                                                    position: .back) {
+                                                                         for: .video,
+                                                                         position: .back) {
                 logger.log(">>> Got back dual wide camera!")
                 defaultVideoDevice = dualWideCameraDevice
-           } else if let backWideCameraDevice = AVCaptureDevice.default(.builtInWideAngleCamera,
+            } else if let backWideCameraDevice = AVCaptureDevice.default(.builtInWideAngleCamera,
                                                                          for: .video,
                                                                          position: .back) {
                 logger.log(">>> Can't find a depth-capable camera: using wide back camera!")

@@ -133,8 +133,17 @@ struct NewSessionButtonView: View {
                     Button(action: {
                         lastCaptureUrl = model.captureDir
                         model.requestNewCaptureFolder()
+                        let isApplyCameraSettingAvalible = model.isSettingExposureAvalible() && model.isSettingWhiteBalanceAvalible()
                         // Navigate back to the main scan page
-                        showAlert = true
+                        if (isApplyCameraSettingAvalible){
+                            showAlert = true
+                        }
+                        else {
+                            if model.parametersLocked == true {
+                                model.toggleCameraParametersLock()
+                            }
+                            presentation.wrappedValue.dismiss()
+                        }
                     }) {
                         Label("New Session", systemImage: "camera")
                     }

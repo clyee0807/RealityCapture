@@ -216,6 +216,9 @@ struct ParametersbarView: View{
     @ObservedObject var model: CameraViewModel
     @State private var showSlider = false
     @State private var showSliderType = 0
+    var setWhiteGainButtonForegroundColor: Color {
+        return model.isSettingWhiteBalanceAvalible() ? .blue : .gray
+    }
     var body: some View {
         ZStack {
 //            RoundedRectangle(cornerRadius: 10)
@@ -235,7 +238,7 @@ struct ParametersbarView: View{
                         }
                     }
                 }, label: {
-                    Image(systemName: "plus.slash.minus").foregroundColor(Color.blue)
+                    Image(systemName: "plus.slash.minus").foregroundColor(setWhiteGainButtonForegroundColor)
                         .font(.largeTitle)
                         .padding()
                         .overlay(
@@ -248,19 +251,21 @@ struct ParametersbarView: View{
                             
                         )
                 })
+                .disabled(!model.isSettingWhiteBalanceAvalible())
                 Spacer()
                 Button(action: {
                     print("Pressed Info!")
                     withAnimation {
                         showSlider.toggle()
                         showSliderType = 1
+                        model.parametersLocked = true
                         if model.parametersLocked != true
                         {
                             model.toggleCameraParametersLock()
                         }
                     }
                 }, label: {
-                    Image(systemName: "sun.max.fill").foregroundColor(Color.blue)
+                    Image(systemName: "sun.max.fill").foregroundColor(Color.gray)
                         .font(.largeTitle)
                         .padding()
                         .overlay(
@@ -270,6 +275,7 @@ struct ParametersbarView: View{
                                             .padding(.horizontal, 20)
                         )
                 })
+                .disabled(true)
                 Spacer()
                 Button(action: {
                     print("Pressed toggle!")
@@ -355,22 +361,25 @@ struct ScanToolbarView: View {
                 Text(model.info)
                 Spacer()
                 
-                Button(action: {
-                    print("Pressed file!")
-                    withAnimation {
-                        self.showCaptureFolderView = true
-                        self.isFromButton = true
-                    }
-                }, label: {
-                    Image(systemName: "folder.fill").foregroundColor(Color.blue)
-                })
-                
-                NavigationLink(destination: CaptureFoldersView(model: model, isFromButton: isFromButton),
-                                       isActive: self.$showCaptureFolderView) {
-                            EmptyView()
+                if(model.isSettingExposureAvalible() && model.isSettingExposureAvalible()) {
+                    Button(action: {
+                        print("Pressed file!")
+                        withAnimation {
+                            self.showCaptureFolderView = true
+                            self.isFromButton = true
                         }
-                        .frame(width: 0, height: 0)
-                        .disabled(true)
+                    }, label: {
+                        Image(systemName: "folder.fill").foregroundColor(Color.blue)
+                    })
+                    
+                    
+                    NavigationLink(destination: CaptureFoldersView(model: model, isFromButton: isFromButton),
+                                   isActive: self.$showCaptureFolderView) {
+                        EmptyView()
+                    }
+                                   .frame(width: 0, height: 0)
+                                   .disabled(true)
+                }
 
                 NavigationLink(destination: HelpPageView()) {
                     Image(systemName: "questionmark.circle")
