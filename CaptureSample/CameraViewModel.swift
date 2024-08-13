@@ -501,6 +501,16 @@ class CameraViewModel: ObservableObject {
         }
         return self.videoDeviceInput!.device.isLockingWhiteBalanceWithCustomDeviceGainsSupported
     }
+    
+    // MARK: - New Framework
+    @Published var isUploading: Bool = false
+    
+    func startStimulateUpload() {
+        isUploading = true
+        DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 3.0){
+            self.isUploading = false
+        }
+    }
 
     // MARK: - Private State
 

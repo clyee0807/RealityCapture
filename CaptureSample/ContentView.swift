@@ -17,8 +17,6 @@ struct ContentView: View {
             Color.black.edgesIgnoringSafeArea(.all)
             CameraView(model: model)
         }
-        // Force dark mode so the photos pop.
-        .environment(\.colorScheme, .dark)
     }
     
 }

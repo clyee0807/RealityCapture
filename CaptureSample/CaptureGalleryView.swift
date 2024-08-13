@@ -24,6 +24,8 @@ struct CaptureGalleryView: View {
     /// When this is set to `true`, the app displays a toolbar button to dispays the capture folder.
     @State private var showCaptureFolderView: Bool = false
     
+    @State private var showUploadView = false
+    
     /// This property indicates whether the app is currently displaying the capture folder for the live session.
     let usingCurrentCaptureFolder: Bool
     
@@ -32,11 +34,16 @@ struct CaptureGalleryView: View {
                                        GridItem(.flexible()),
                                        GridItem(.flexible()) ]
     
+    let isCapturing: Bool
+    let hasBeenUploaded: Bool
+    
     /// This initializer creates a capture gallery view for the active capture session.
     init(model: CameraViewModel) {
         self.model = model
         self.captureFolderState = model.captureFolderState!
         usingCurrentCaptureFolder = true
+        isCapturing = true
+        hasBeenUploaded = false
     }
     
     /// This initializer creates a capture gallery view for a previously created capture folder.
@@ -45,6 +52,8 @@ struct CaptureGalleryView: View {
         self.captureFolderState = captureFolderState
         usingCurrentCaptureFolder = (model.captureFolderState?.captureDir?.lastPathComponent
                                         == captureFolderState.captureDir?.lastPathComponent)
+        isCapturing = false
+        hasBeenUploaded = false
     }
     
     var body: some View {
@@ -58,6 +67,13 @@ struct CaptureGalleryView: View {
             }
             .frame(width: 0, height: 0)
             .disabled(true)
+            
+            NavigationLink(destination: UploadView(model: model),
+                            isActive: self.$showUploadView) {
+                EmptyView()
+            }
+                            .frame(width: 0, height: 0)
+                            .disabled(true)
             
             GeometryReader { geometryReader in
                 ScrollView() {
@@ -102,14 +118,18 @@ struct CaptureGalleryView: View {
         .navigationTitle(Text("\(captureFolderState.captureDir?.lastPathComponent ?? "NONE")"))
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarItems(trailing: HStack {
-            NewSessionButtonView(model: model, usingCurrentCaptureFolder: usingCurrentCaptureFolder)
-                .padding(.horizontal, 5)
-            if usingCurrentCaptureFolder {
-                Button(action: {
-                    self.showCaptureFolderView = true
-                }) {
-                    Image(systemName: "folder")
-                }
+            Spacer()
+//            NewSessionButtonView(model: model, usingCurrentCaptureFolder: usingCurrentCaptureFolder)
+//                .padding(.horizontal, 5)
+//            if usingCurrentCaptureFolder {
+//                Button(action: {
+//                    self.showCaptureFolderView = true
+//                }) {
+//                    Image(systemName: "folder")
+//                }
+//            }
+            if(!isCapturing && !hasBeenUploaded){
+                UploadIconButtonView(showUploadView: self.$showUploadView)
             }
         })
     }

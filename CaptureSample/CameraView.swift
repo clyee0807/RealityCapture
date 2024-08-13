@@ -65,7 +65,7 @@ struct CameraView: View {
 //        }
 //    }
     var body: some View {
-            NavigationView {
+            //NavigationView {
                 GeometryReader { geometryReader in
                     ZStack {
                         Color.black.edgesIgnoringSafeArea(.all)
@@ -108,11 +108,11 @@ struct CameraView: View {
                         }
                     }
                 }
-                .navigationTitle(Text("Scan"))
-                .navigationBarTitle("Scan")
+//                .navigationTitle(Text("Scan"))
+//                .navigationBarTitle("Scan")
                 .navigationBarHidden(true)
                 .navigationBarTitleDisplayMode(.inline)
-            }
+//            }
         }
 }
 
@@ -337,10 +337,18 @@ struct ScanToolbarView: View {
     @Binding var showInfo: Bool
     @State private var showCaptureFolderView = false
     @State private var isFromButton = false
+    @State private var showUploadView = false
+    @Environment(\.presentationMode) var mode: Binding<PresentationMode>
     
     var body: some View {
         ZStack {
             HStack {
+                Button(action: {
+                    print("Pressed Backward!")
+                    self.mode.wrappedValue.dismiss()
+                }, label: {
+                    Image(systemName: "chevron.backward").foregroundColor(Color.blue)
+                })
                 SystemStatusIcon(model: model)
                 Button(action: {
                     print("Pressed Info!")
@@ -360,7 +368,13 @@ struct ScanToolbarView: View {
 //                })
                 Text(model.info)
                 Spacer()
-                
+                NavigationLink(destination: UploadView(model: model),
+                                isActive: self.$showUploadView) {
+                    EmptyView()
+                }
+                                .frame(width: 0, height: 0)
+                                .disabled(true)
+                UploadIconButtonView(showUploadView: self.$showUploadView)
                 if(model.isSettingExposureAvalible() && model.isSettingExposureAvalible()) {
                     Button(action: {
                         print("Pressed file!")
@@ -594,5 +608,17 @@ struct ThumbnailImageView: View {
             .overlay(RoundedRectangle(cornerRadius: thumbnailFrameCornerRadius)
                         .stroke(Color.primary, lineWidth: thumbnailStrokeWidth))
             .shadow(radius: 10)
+    }
+}
+
+struct UploadIconButtonView: View {
+    @Binding var showUploadView: Bool
+    var body: some View{
+        Button {
+            print("Pressed Upload!")
+            self.showUploadView = true
+        } label: {
+            Image(systemName: "square.and.arrow.up")
+        }
     }
 }

@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		94A529B82C6AF5890098679A /* InitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94A529B72C6AF5890098679A /* InitView.swift */; };
+		94A529BA2C6B47ED0098679A /* UploadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94A529B92C6B47ED0098679A /* UploadView.swift */; };
 		C91EEE4B25EDA200009FD603 /* CaptureFoldersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C91EEE4A25EDA200009FD603 /* CaptureFoldersView.swift */; };
 		C91EEE4D25EDBE46009FD603 /* CaptureFolderState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C91EEE4C25EDBE46009FD603 /* CaptureFolderState.swift */; };
 		C94968AE25F2C24100540756 /* InfoPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C94968AD25F2C24100540756 /* InfoPanelView.swift */; };
@@ -31,6 +33,8 @@
 /* Begin PBXFileReference section */
 		7BAFE7282618093500D2299C /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		7C6C99F1D4B6E3EBA3A7B7DF /* LICENSE.txt */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = LICENSE.txt; sourceTree = "<group>"; };
+		94A529B72C6AF5890098679A /* InitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InitView.swift; sourceTree = "<group>"; };
+		94A529B92C6B47ED0098679A /* UploadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadView.swift; sourceTree = "<group>"; };
 		9AEEB9169F5D7FC75E6B35A2 /* SampleCode.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = SampleCode.xcconfig; path = Configuration/SampleCode.xcconfig; sourceTree = "<group>"; };
 		C91EEE4A25EDA200009FD603 /* CaptureFoldersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureFoldersView.swift; sourceTree = "<group>"; };
 		C91EEE4C25EDBE46009FD603 /* CaptureFolderState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureFolderState.swift; sourceTree = "<group>"; };
@@ -110,9 +114,11 @@
 				C9516ADA25F090FE00DA396D /* TriggerEveryTimer.swift */,
 				C9898DEB25E9806300667AE0 /* HelpPageView.swift */,
 				C9BF99A025E0808D00707ADC /* ImageLoader.swift */,
+				94A529B72C6AF5890098679A /* InitView.swift */,
 				C94968AD25F2C24100540756 /* InfoPanelView.swift */,
 				C96059EB25CA1A5E00FDB64F /* PhotoCaptureDelegate.swift */,
 				C9516AD825F085B200DA396D /* TimerView.swift */,
+				94A529B92C6B47ED0098679A /* UploadView.swift */,
 				C9E38E1625C8CB5D00171AB3 /* Assets.xcassets */,
 				C9E38E1B25C8CB5D00171AB3 /* Info.plist */,
 				C9E38E1825C8CB5D00171AB3 /* Preview Content */,
@@ -223,6 +229,8 @@
 				C9605AE925CCCD1200FDB64F /* Capture.swift in Sources */,
 				C91EEE4B25EDA200009FD603 /* CaptureFoldersView.swift in Sources */,
 				C96059F225CA210400FDB64F /* CameraPreviewView.swift in Sources */,
+				94A529B82C6AF5890098679A /* InitView.swift in Sources */,
+				94A529BA2C6B47ED0098679A /* UploadView.swift in Sources */,
 				C9E38E1325C8CB5B00171AB3 /* CaptureSampleApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

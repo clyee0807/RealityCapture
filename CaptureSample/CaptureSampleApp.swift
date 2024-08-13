@@ -13,7 +13,19 @@ struct CaptureSampleApp: App {
     
     var body: some Scene {
         WindowGroup {
-            ContentView(model: model)
+            if #available(iOS 16.0, *) {
+                NavigationStack{
+                    InitView(model: model)
+                }                // Force dark mode so the photos pop.
+                .environment(\.colorScheme, .dark)
+            } else {
+                // Fallback on earlier versions
+                NavigationView{
+                    InitView(model: model)
+                }
+                // Force dark mode so the photos pop.
+                .environment(\.colorScheme, .dark)
+            }
         }
     }
 }
