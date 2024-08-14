@@ -130,7 +130,7 @@ class CameraViewModel: ObservableObject {
         // This is an asynchronous call that begins all setup. It sets
         // up the camera device, motion device (gravity), and ensures correct
         // permissions.
-        startSetup()
+//        startSetup()
     }
 
     /// This method advances through the available capture modes, updating `captureMode`.
@@ -437,6 +437,7 @@ class CameraViewModel: ObservableObject {
     /// This method starts the setup process, which runs asynchronously. This method requests camera
     /// access if the user hasn't yet granted it.
     func startSetup() {
+        alreadySetup = true
         do {
             captureFolderState = try CameraViewModel.createNewCaptureFolder()
         } catch {
@@ -503,6 +504,7 @@ class CameraViewModel: ObservableObject {
     }
     
     // MARK: - New Framework
+    @Published var alreadySetup: Bool = false
     @Published var isUploading: Bool = false
     
     func startStimulateUpload() {

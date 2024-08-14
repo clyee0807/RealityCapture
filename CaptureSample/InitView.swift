@@ -16,7 +16,7 @@ struct InitView: View {
     var body: some View {
         ZStack{
             Color(red: 0, green: 0, blue: 0.01, opacity: 1.0)
-                .edgesIgnoringSafeArea(/*@START_MENU_TOKEN@*/.all/*@END_MENU_TOKEN@*/)
+                .edgesIgnoringSafeArea(.all)
             VStack{
                 NavigationLink(destination: ContentView(model: model),
                                 isActive: self.$showCameraView) {
@@ -24,7 +24,7 @@ struct InitView: View {
                 }
                                 .frame(width: 0, height: 0)
                                 .disabled(true)
-                NewCaptureButton(showCameraView: self.$showCameraView)
+                NewCaptureButton(model: model, showCameraView: self.$showCameraView)
                 Spacer()
                     .frame(height: 50)
                 NavigationLink(destination: CaptureFoldersView(model: model, isFromButton: false),
@@ -41,9 +41,15 @@ struct InitView: View {
 }
 
 struct NewCaptureButton: View {
+    @ObservedObject var model: CameraViewModel
     @Binding var showCameraView: Bool
     var body: some View {
         Button(action: {
+            if(model.alreadySetup){
+                model.requestNewCaptureFolder()
+            } else {
+                model.startSetup()
+            }
             showCameraView = true
         }, label: {
             Text("New Capture")

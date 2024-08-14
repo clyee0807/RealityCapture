@@ -44,9 +44,10 @@ struct CaptureFoldersView: View {
             .onReceive(publisher, perform: { folderListing in
                 // Filter out the current folder so the app doesn't delete it
                 // or recurse down into it.
-                self.captureFolders = folderListing.filter {
-                    $0.lastPathComponent != model.captureDir!.lastPathComponent
-                }
+                self.captureFolders = folderListing
+//                    .filter {
+//                    $0.lastPathComponent != model.captureDir!.lastPathComponent
+//                }
             })
         }
         .navigationTitle("Captures")
