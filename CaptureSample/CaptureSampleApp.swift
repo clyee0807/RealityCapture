@@ -9,11 +9,16 @@ import SwiftUI
 
 @main
 struct CaptureSampleApp: App {
-    @StateObject var model = CameraViewModel()
+    //var datasetWriter = DatasetWriter()
+    
+    //@StateObject var model = ARViewModel(datasetWriter: datasetWriter)
     
     var body: some Scene {
         WindowGroup {
-            if #available(iOS 16.0, *) {
+            let datasetWriter = DatasetWriter()
+            let model = ARViewModel(datasetWriter: datasetWriter)
+            
+            if #available(iOS 17.0, *) {
                 NavigationStack{
                     InitView(model: model)
                 }                // Force dark mode so the photos pop.
@@ -29,3 +34,4 @@ struct CaptureSampleApp: App {
         }
     }
 }
+

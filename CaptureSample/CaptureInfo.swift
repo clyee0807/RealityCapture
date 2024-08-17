@@ -8,7 +8,7 @@ import Combine
 import Foundation
 import os
 
-private let logger = Logger(subsystem: "com.apple.sample.CaptureSample",
+private let logger = Logger(subsystem: "com.lychen.CaptureSample",
                             category: "CaptureInfo")
 
 /// This is a lightweight data object that holds a single capture sample, a reference to its capture directory,
@@ -26,7 +26,8 @@ struct CaptureInfo: Identifiable {
         case noSuchDirectory(URL)
     }
     
-    static let imageSuffix: String = ".HEIC"
+//    static let imageSuffix: String = ".HEIC"
+    static let imageSuffix: String = ".png"
     
     /// This is a unique identifier for the capture sample.
     let id: UInt32
@@ -51,9 +52,9 @@ struct CaptureInfo: Identifiable {
         return CaptureInfo.depthUrl(in: captureDir, id: id)
     }
     
-    var gravityUrl: URL {
-        return CaptureInfo.gravityUrl(in: captureDir, id: id)
-    }
+//    var gravityUrl: URL {
+//        return CaptureInfo.gravityUrl(in: captureDir, id: id)
+//    }
     
     /// This method checks for the existence of the image and metadata files associated with this capture.
     /// This method uses a `Promise` instance to return the data asynchronously once it has finished
@@ -84,7 +85,7 @@ struct CaptureInfo: Identifiable {
         dispatchPrecondition(condition: .notOnQueue(.main))
         deleteHelper(delete: imageUrl, fileType: "image")
         deleteHelper(delete: depthUrl, fileType: "depth")
-        deleteHelper(delete: gravityUrl, fileType: "gravity")
+//        deleteHelper(delete: gravityUrl, fileType: "gravity")
     }
     
     private func deleteHelper(delete: URL, fileType: String) {

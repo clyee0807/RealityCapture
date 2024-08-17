@@ -10,7 +10,7 @@ import Foundation
 
 import os
 
-private let logger = Logger(subsystem: "com.apple.sample.CaptureSample",
+private let logger = Logger(subsystem: "com.lychen.CaptureSample",
                             category: "CaptureFolderState")
 
 /// This helper class loads the contents of an image capture folder. It uses asynchronous calls that run on a
@@ -31,6 +31,7 @@ class CaptureFolderState: ObservableObject {
     
     init(url captureDir: URL) {
         self.captureDir = captureDir
+        print("captureDir = \(self.captureDir!)")
         requestLoad()
     }
     
@@ -76,18 +77,17 @@ class CaptureFolderState: ObservableObject {
                         .filter { $0.isFileURL
                             && $0.lastPathComponent.hasSuffix(CaptureInfo.imageSuffix)
                         }
+                    print("imgUrls: \(imgUrls)")
                     for imgUrl in imgUrls {
-                        guard let photoIdString =
-                                try? CaptureInfo.photoIdString(from: imgUrl) else {
-                            logger.error("Can't get photoIdString from url: \"\(imgUrl)\"")
+                        guard let photoIdString = try? CaptureInfo.photoIdString(from: imgUrl) else {
+                            print("Can't get photoIdString from url: \"\(imgUrl)\"")
                             continue
                         }
                         guard let captureId = try? CaptureInfo.extractId(from: photoIdString) else {
-                            logger.error("Can't get id from from photoIdString: \"\(photoIdString)\"")
+                            print("Can't get id from from photoIdString: \"\(photoIdString)\"")
                             continue
                         }
-                        captureInfoResults.append(CaptureInfo(id: captureId,
-                                                              captureDir: self.captureDir!))
+                        captureInfoResults.append(CaptureInfo(id: captureId, captureDir: self.captureDir!))
                     }
                     // Sort by the capture id.
                     captureInfoResults.sort(by: { $0.id < $1.id })
@@ -121,7 +121,7 @@ class CaptureFolderState: ObservableObject {
         // documents directory visible in the Files app and allows sharing
         // using AirDrop, Mail, or iCloud.
         guard let capturesFolder = CaptureFolderState.capturesFolder() else {
-            logger.error("Can't get user document dir!")
+            print("Can't get user document dir!")
             return nil
         }
         
@@ -133,20 +133,20 @@ class CaptureFolderState: ObservableObject {
         let newCaptureDir = capturesFolder
             .appendingPathComponent(timestamp + "/", isDirectory: true)
         
-        logger.log("Creating capture path: \"\(String(describing: newCaptureDir))\"")
+        print("Creating capture path: \"\(String(describing: newCaptureDir))\"")
         let capturePath = newCaptureDir.path
         do {
             try FileManager.default.createDirectory(atPath: capturePath,
                                                     withIntermediateDirectories: true)
         } catch {
-            logger.error("Failed to create capturepath=\"\(capturePath)\" error=\(String(describing: error))")
+            print("Failed to create capturepath=\"\(capturePath)\" error=\(String(describing: error))")
         }
         var isDir: ObjCBool = false
         let exists = FileManager.default.fileExists(atPath: capturePath, isDirectory: &isDir)
         guard exists && isDir.boolValue else {
             return nil
         }
-        return newCaptureDir
+        return newCaptureDir  /// file:///var/mobile/Containers/Data/Application/DA032602-1BCF-4E3C-AC0D-D8AF31147547/Documents/Captures/Aug%2017,%202024%20at%2010:33:35%E2%80%AFAM/
     }
     
     /// This method returns a `Future` instance that's populated with a list of capture folders sorted by creation date.

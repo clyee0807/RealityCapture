@@ -10,11 +10,11 @@ import SwiftUI
 
 import os
 
-private let logger = Logger(subsystem: "com.apple.sample.CaptureSample",
+private let logger = Logger(subsystem: "com.lychen.CaptureSample",
                             category: "CaptureFoldersView")
 
 struct CaptureFoldersView: View {
-    @ObservedObject var model: CameraViewModel
+    @ObservedObject var model: ARViewModel
     @State var captureFolders: [URL] = []
     var isFromButton: Bool
     
@@ -66,12 +66,12 @@ struct CaptureFolderItem: View {
     private let thumbnailWidth: CGFloat = 50
     private let thumbnailHeight: CGFloat = 50
     
-    @ObservedObject private var model: CameraViewModel
+    @ObservedObject private var model: ARViewModel
     @StateObject private var ownedCaptureFolderState: CaptureFolderState
     var isFromButton: Bool
     @Environment(\.presentationMode) private var presentation
     
-    init(model: CameraViewModel, url: URL, isFromButton: Bool) {
+    init(model: ARViewModel, url: URL, isFromButton: Bool) {
         self.model = model
         self._ownedCaptureFolderState = StateObject(wrappedValue: CaptureFolderState(url: url))
         self.isFromButton = isFromButton
@@ -81,9 +81,8 @@ struct CaptureFolderItem: View {
         if isFromButton {
             Button(action: {
                 print("Selected folder URL: \(ownedCaptureFolderState.captureDir!)")
-                model.applyCurrentCameraSettings(captureDirPath: ownedCaptureFolderState.captureDir!)
                 self.presentation.wrappedValue.dismiss()
-                //for closing the current view. => back to main capture view.
+                // for closing the current view. => back to main capture view.
             }) {
                 folderContent
             }
@@ -118,3 +117,13 @@ struct CaptureFolderItem: View {
             }
         }
 }
+
+#if DEBUG
+struct CaptureFoldersView_Previews: PreviewProvider {
+    static var previews: some View {
+        var datasetWriter = DatasetWriter()
+        let model = ARViewModel(datasetWriter: datasetWriter)
+        CaptureFoldersView(model: model, isFromButton: false)
+    }
+}
+#endif // DEBUG

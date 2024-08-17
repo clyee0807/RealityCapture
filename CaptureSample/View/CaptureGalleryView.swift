@@ -13,7 +13,7 @@ struct CaptureGalleryView: View {
     private let columnSpacing: CGFloat = 3
     
     /// This is the data model the capture session uses.
-    @ObservedObject var model: CameraViewModel
+    @ObservedObject var model: ARViewModel
     
     /// This property holds the folder the user is currently viewing.
     @ObservedObject private var captureFolderState: CaptureFolderState
@@ -38,7 +38,7 @@ struct CaptureGalleryView: View {
     let hasBeenUploaded: Bool
     
     /// This initializer creates a capture gallery view for the active capture session.
-    init(model: CameraViewModel) {
+    init(model: ARViewModel) {
         self.model = model
         self.captureFolderState = model.captureFolderState!
         usingCurrentCaptureFolder = true
@@ -47,7 +47,7 @@ struct CaptureGalleryView: View {
     }
     
     /// This initializer creates a capture gallery view for a previously created capture folder.
-    init(model: CameraViewModel, observing captureFolderState: CaptureFolderState) {
+    init(model: ARViewModel, observing captureFolderState: CaptureFolderState) {
         self.model = model
         self.captureFolderState = captureFolderState
         usingCurrentCaptureFolder = (model.captureFolderState?.captureDir?.lastPathComponent
@@ -128,15 +128,15 @@ struct CaptureGalleryView: View {
 //                    Image(systemName: "folder")
 //                }
 //            }
-            if(!isCapturing && !hasBeenUploaded){
-                UploadIconButtonView(showUploadView: self.$showUploadView)
-            }
+//            if(!isCapturing && !hasBeenUploaded){
+//                UploadIconButtonView(showUploadView: self.$showUploadView)
+//            }
         })
     }
 }
 
 struct NewSessionButtonView: View {
-    @ObservedObject var model: CameraViewModel
+    @ObservedObject var model: ARViewModel
     
     /// This is an environment variable that the capture gallery view uses to store state.
     @Environment(\.presentationMode) private var presentation
@@ -153,17 +153,6 @@ struct NewSessionButtonView: View {
                     Button(action: {
                         lastCaptureUrl = model.captureDir
                         model.requestNewCaptureFolder()
-                        let isApplyCameraSettingAvalible = model.isSettingExposureAvalible() && model.isSettingWhiteBalanceAvalible()
-                        // Navigate back to the main scan page
-                        if (isApplyCameraSettingAvalible){
-                            showAlert = true
-                        }
-                        else {
-                            if model.parametersLocked == true {
-                                model.toggleCameraParametersLock()
-                            }
-                            presentation.wrappedValue.dismiss()
-                        }
                     }) {
                         Label("New Session", systemImage: "camera")
                     }
@@ -175,14 +164,14 @@ struct NewSessionButtonView: View {
                         title: Text("Notification"),
                         message: Text("Applying the current camera setting?"),
                         primaryButton: .default(Text("Yes")) {
-                            model.applyCurrentCameraSettings(captureDirPath: lastCaptureUrl!)
+//                            model.applyCurrentCameraSettings(captureDirPath: lastCaptureUrl!)
                             presentation.wrappedValue.dismiss()
                         },
                         secondaryButton: .default(Text("No"))
                         {
-                            if model.parametersLocked == true {
-                                model.toggleCameraParametersLock()
-                            }
+//                            if model.parametersLocked == true {
+//                                model.toggleCameraParametersLock()
+//                            }
                             presentation.wrappedValue.dismiss()
                         }
                     )
@@ -340,3 +329,13 @@ struct FullSizeImageView: View {
         .transition(.opacity)
     }
 }
+
+#if DEBUG
+struct CaptureGalleryView_Previews: PreviewProvider {
+    static var previews: some View {
+        var datasetWriter = DatasetWriter()
+        let model = ARViewModel(datasetWriter: datasetWriter)
+        CaptureGalleryView(model: model)
+    }
+}
+#endif // DEBUG

@@ -11,7 +11,7 @@ import CoreImage
 import CoreMotion
 import os
 
-private let logger = Logger(subsystem: "com.apple.sample.CaptureSample",
+private let logger = Logger(subsystem: "com.lychen.CaptureSample",
                             category: "PhotoCaptureDelegate")
 
 /// This class stores state and acts as a delegate for all callbacks during the capture process. It pushes the

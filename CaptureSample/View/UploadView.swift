@@ -10,7 +10,7 @@ import Foundation
 import SwiftUI
 
 struct UploadView: View {
-    @ObservedObject var model: CameraViewModel
+    @ObservedObject var model: ARViewModel
     @State var isUploading: Bool = false
     //@State var backToInitView: Bool = false
     var body: some View {
@@ -117,11 +117,11 @@ struct ModelTypeView: View {
 }
 
 struct UploadButtonView: View {
-    @ObservedObject var model: CameraViewModel
+    @ObservedObject var model: ARViewModel
     @Binding var isUploading: Bool
     var body: some View {
         Button(action: {
-            model.startStimulateUpload()
+//            model.startStimulateUpload()
             isUploading = true
         }, label: {
             Text("Upload")
@@ -135,10 +135,10 @@ struct UploadButtonView: View {
 }
 
 struct isUploadingView: View {
-    @ObservedObject var model: CameraViewModel
+    @ObservedObject var model: ARViewModel
     @State var backToInitView: Bool = false
     
-    init(model: CameraViewModel){
+    init(model: ARViewModel){
         self.model = model
     }
     
@@ -187,8 +187,9 @@ struct isUploadingView: View {
 
 #if DEBUG
 struct UploadView_Previews: PreviewProvider {
-    @StateObject private static var model = CameraViewModel()
     static var previews: some View {
+        var datasetWriter = DatasetWriter()
+        let model = ARViewModel(datasetWriter: datasetWriter)
         UploadView(model: model)
     }
 }

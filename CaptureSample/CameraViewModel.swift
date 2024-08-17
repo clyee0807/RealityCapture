@@ -12,7 +12,7 @@ import SwiftUI
 
 import os
 
-private let logger = Logger(subsystem: "com.apple.sample.CaptureSample",
+private let logger = Logger(subsystem: "com.lychen.CaptureSample",
                             category: "CameraViewModel")
 
 /// This is a SwiftUI observable data model class that holds all of the app's state and handles all changes
