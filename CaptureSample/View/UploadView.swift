@@ -11,8 +11,15 @@ import SwiftUI
 
 struct UploadView: View {
     @ObservedObject var model: ARViewModel
+    @ObservedObject var uploadManager: UploadManager
+    
     @State var isUploading: Bool = false
     //@State var backToInitView: Bool = false
+    init(model: ARViewModel, uploadManager: UploadManager){
+        self.model = model
+        self.uploadManager = uploadManager
+    }
+    
     var body: some View {
         ZStack{
             Color(red: 0, green: 0, blue: 0.01, opacity: 1.0)
@@ -134,6 +141,30 @@ struct UploadButtonView: View {
     }
 }
 
+
+struct UploadIconButtonView: View {
+
+    @ObservedObject var uploadManager: UploadManager
+    @Binding var showUploadView: Bool
+    
+    init(uploadManager: UploadManager, showUploadView: Binding<Bool>){
+        self.uploadManager = uploadManager
+        self._showUploadView = showUploadView
+    }
+    
+    var body: some View {
+        Button(action: {
+            print("Press Upload Icon!!")
+            Task{
+                await uploadManager.upload()
+            }
+            showUploadView = true
+        }, label: {
+            Image(systemName: "square.and.arrow.up")
+        })
+    }
+}
+
 struct isUploadingView: View {
     @ObservedObject var model: ARViewModel
     @State var backToInitView: Bool = false
@@ -185,12 +216,12 @@ struct isUploadingView: View {
     }
 }
 
-#if DEBUG
-struct UploadView_Previews: PreviewProvider {
-    static var previews: some View {
-        var datasetWriter = DatasetWriter()
-        let model = ARViewModel(datasetWriter: datasetWriter)
-        UploadView(model: model)
-    }
-}
-#endif // DEBUG
+//#if DEBUG
+//struct UploadView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        var datasetWriter = DatasetWriter()
+//        let model = ARViewModel(datasetWriter: datasetWriter)
+//        UploadView(model: model)
+//    }
+//}
+//#endif // DEBUG

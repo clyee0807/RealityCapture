@@ -47,7 +47,6 @@ struct Capture: Identifiable {
         self.id = id
         self.photo = photo
         self.depthData = depthData
-        self.gravity = gravity
     }
     
     /// This method writes the captured images to a specified folder. This method saves the image as
@@ -55,7 +54,6 @@ struct Capture: Identifiable {
     /// vector, if available, as `IMG_<ID>_gravity.TXT`.
     func writeAllFiles(to captureDir: URL) throws {
         writeImage(to: captureDir)
-        writeGravityIfAvailable(to: captureDir)
         writeDepthIfAvailable(to: captureDir)
     }
     
@@ -92,26 +90,6 @@ struct Capture: Identifiable {
         }
     }
     
-    @discardableResult
-    private func writeGravityIfAvailable(to captureDir: URL) -> Bool {
-        guard let gravityVector = gravity else {
-            return false
-        }
-        let gravityString =
-            String(format: "%lf,%lf,%lf", gravityVector.x, gravityVector.y, gravityVector.z)
-        let gravityUrl = CaptureInfo.gravityUrl(in: captureDir, id: id)
-        logger.log("Writing gravity metadata to: \"\(gravityUrl.path)\"...")
-        do {
-            try gravityString.write(toFile: gravityUrl.path, atomically: true,
-                                    encoding: .utf8)
-            logger.log("... done.")
-            return true
-        } catch {
-            logger.error(
-                "can't write \(gravityUrl.path) error=\(String(describing: error))")
-            return false
-        }
-    }
     
     @discardableResult
     private func writeDepthIfAvailable(to captureDir: URL) -> Bool {

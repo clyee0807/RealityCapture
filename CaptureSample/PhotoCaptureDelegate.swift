@@ -18,7 +18,7 @@ private let logger = Logger(subsystem: "com.lychen.CaptureSample",
 /// capture objects containing images and metadata back to the specified `CameraViewModel`.
 class PhotoCaptureProcessor: NSObject {
     private let photoId: UInt32
-    private let model: CameraViewModel
+    private let model: ARViewModel
     
     private(set) var requestedPhotoSettings: AVCapturePhotoSettings
     
@@ -40,7 +40,7 @@ class PhotoCaptureProcessor: NSObject {
     private var gravity: CMAcceleration?
     
     init(with requestedPhotoSettings: AVCapturePhotoSettings,
-         model: CameraViewModel,
+         model: ARViewModel,
          photoId: UInt32,
          motionManager: CMMotionManager,
          willCapturePhotoAnimation: @escaping () -> Void,
@@ -142,7 +142,7 @@ extension PhotoCaptureProcessor: AVCapturePhotoCaptureDelegate {
         }
         
         print("Making capture and adding to model...")
-        model.addCapture(Capture(id: photoId, photo: photoData, depthData: depthMapData,
-                                 gravity: gravity))
+//        model.addCapture(Capture(id: photoId, photo: photoData, depthData: depthMapData,
+//                                 gravity: gravity))
     }
 }

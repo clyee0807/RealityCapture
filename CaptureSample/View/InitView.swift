@@ -42,9 +42,16 @@ struct InitView: View {
 struct NewCaptureButton: View {
     @ObservedObject var model: ARViewModel
     @Binding var showCameraView: Bool
+    
     var body: some View {
         Button(action: {
-            model.requestNewCaptureFolder()
+            do {
+                try model.datasetWriter.initializeProject()
+                model.captureFolderState = model.datasetWriter.captureFolderState
+            }
+            catch {
+                print("\(error)")
+            }
 //            if(model.alreadySetup){
 //                model.requestNewCaptureFolder()
 //            } else {

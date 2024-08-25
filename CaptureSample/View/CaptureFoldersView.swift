@@ -75,6 +75,7 @@ struct CaptureFolderItem: View {
         self.model = model
         self._ownedCaptureFolderState = StateObject(wrappedValue: CaptureFolderState(url: url))
         self.isFromButton = isFromButton
+//        print("init captureFolderItem, url = \(url)")
     }
     
     var body: some View {
@@ -118,12 +119,12 @@ struct CaptureFolderItem: View {
         }
 }
 
-#if DEBUG
-struct CaptureFoldersView_Previews: PreviewProvider {
-    static var previews: some View {
-        var datasetWriter = DatasetWriter()
-        let model = ARViewModel(datasetWriter: datasetWriter)
-        CaptureFoldersView(model: model, isFromButton: false)
-    }
-}
-#endif // DEBUG
+//#if DEBUG
+//struct CaptureFoldersView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        var datasetWriter = DatasetWriter()
+//        let model = ARViewModel(datasetWriter: datasetWriter)
+//        CaptureFoldersView(model: model, isFromButton: false)
+//    }
+//}
+//#endif // DEBUG

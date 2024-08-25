@@ -33,9 +33,6 @@ extension UIImage {
 
 class DatasetWriter {
 
-//    var capturedFrames: [CapturedFrame] = []
-
-    
     enum SessionState {
         case SessionNotStarted
         case SessionStarted
@@ -48,6 +45,8 @@ class DatasetWriter {
     
     @Published var currentFrameCounter = 0
     @Published var writerState = SessionState.SessionNotStarted
+        
+    @Published var captureFolderState: CaptureFolderState?
     
     func projectExists(_ projectDir: URL) -> Bool {
         var isDir: ObjCBool = true
@@ -55,6 +54,7 @@ class DatasetWriter {
     }
     
     func initializeProject() throws {
+        print("datasetWriter: initialize project!")
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "YYMMddHHmmss"
         projectName = dateFormatter.string(from: Date())
@@ -63,12 +63,14 @@ class DatasetWriter {
         if projectExists(projectDir) {
             throw AppError.projectAlreadyExists
         }
-        do {
-            try FileManager.default.createDirectory(at: projectDir.appendingPathComponent("images"), withIntermediateDirectories: true)
+        
+        try FileManager.default.createDirectory(at: projectDir, withIntermediateDirectories: true, attributes: nil)
+        
+        if projectExists(projectDir) {
+            throw AppError.projectAlreadyExists
         }
-        catch {
-            print(error)
-        }
+        
+        self.captureFolderState = CaptureFolderState(url: projectDir)
         
         manifest = Manifest()
         
@@ -99,36 +101,24 @@ class DatasetWriter {
         }
     }
     
-    func finalizeProject(zip: Bool = false) {  // set to false can unable zipping the project
+    func finalizeProject(zip: Bool = false) {
         print("Finalize Project --- ")
         writerState = .SessionNotStarted
         let manifest_path = getDocumentsDirectory()
             .appendingPathComponent(projectName)
-            .appendingPathComponent("transforms.json")
-        
+            .appendingPathComponent("metadata.json")
         writeManifestToPath(path: manifest_path)
-//        if zip {
-//            DispatchQueue.global().async {
-//                do {
-//                    let _ = try Zip.quickZipFiles([self.projectDir], fileName: self.projectName)
-//                    try FileManager.default.removeItem(at: self.projectDir)
-//                }
-//                catch {
-//                    print("Could not zip")
-//                }
-//            }
-//        }
     }
     
     func getCurrentFrameName() -> String {
-        let frameName = String(currentFrameCounter)
+        let frameName = String(format: "%04d", currentFrameCounter)
         return frameName
     }
     
     func getFrameMetadata(_ frame: ARFrame, withDepth: Bool = false) -> Manifest.Frame {
         let frameName = getCurrentFrameName()
-        let filePath = "images/\(frameName)"
-        let depthPath = "images/\(frameName).depth.png"
+        let filePath = "IMG_\(frameName).png"
+        let depthPath = "IMG_\(frameName)_depth.tiff"
         let manifest_frame = Manifest.Frame(
             filePath: filePath,
             depthPath: withDepth ? depthPath : nil,
@@ -158,9 +148,9 @@ class DatasetWriter {
     }
     
     func writeFrameToDisk(frame: ARFrame, viewModel: ARViewModel, useDepthIfAvailable: Bool = true) {
-        let frameName =  "\(getCurrentFrameName()).png"
-        let depthFrameName =  "\(getCurrentFrameName()).depth.png"
-        let baseDir = projectDir.appendingPathComponent("images")
+        let frameName =  "IMG_\(getCurrentFrameName()).png"
+        let depthFrameName =  "IMG_\(getCurrentFrameName())_depth.tiff"
+        let baseDir = projectDir//.appendingPathComponent("images")
         let fileName = baseDir.appendingPathComponent(frameName)
         let depthFileName = baseDir.appendingPathComponent(depthFrameName)
         
@@ -185,15 +175,21 @@ class DatasetWriter {
             
             let frameMetadata = getFrameMetadata(frame, withDepth: useDepth)
             let rgbBuffer = pixelBufferToUIImage(pixelBuffer: frame.capturedImage)
-            let depthBuffer = useDepth ? pixelBufferToUIImage(pixelBuffer: frame.sceneDepth!.depthMap).resizeImageTo(size:  frame.camera.imageResolution) : nil
+            let depthBuffer = useDepth ? frame.sceneDepth!.depthMap : nil
             
             DispatchQueue.global().async {
                 do {
+                    // save image into png
                     let rgbData = rgbBuffer.pngData()
                     try rgbData?.write(to: fileName)
-                    if useDepth {
-                        let depthData = depthBuffer!.pngData()
-                        try depthData?.write(to: depthFileName)
+
+                    // save depth into tiff
+                    if let depthBuffer = depthBuffer, useDepth {
+                        let ciImage = CIImage(cvImageBuffer: depthBuffer)
+                        let ciContext = CIContext()
+                        if let tiffData = ciContext.tiffRepresentation(of: ciImage, format: .L16, colorSpace: CGColorSpaceCreateDeviceGray(), options: [:]) {
+                            try tiffData.write(to: depthFileName)
+                        }
                     }
                 }
                 catch {
@@ -201,6 +197,7 @@ class DatasetWriter {
                 }
                 DispatchQueue.main.async {
                     self.manifest.frames.append(frameMetadata)
+                                        
                 }
             }
             currentFrameCounter += 1

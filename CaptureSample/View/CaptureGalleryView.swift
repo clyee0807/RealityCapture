@@ -26,6 +26,8 @@ struct CaptureGalleryView: View {
     
     @State private var showUploadView = false
     
+    @StateObject private var uploadManager: UploadManager
+    
     /// This property indicates whether the app is currently displaying the capture folder for the live session.
     let usingCurrentCaptureFolder: Bool
     
@@ -44,6 +46,11 @@ struct CaptureGalleryView: View {
         usingCurrentCaptureFolder = true
         isCapturing = true
         hasBeenUploaded = false
+        
+        self._uploadManager = StateObject(
+            wrappedValue: UploadManager(captureDir: model.captureFolderState!.captureDir!,
+                                        captureInfos: model.captureFolderState!.captures)
+        )
     }
     
     /// This initializer creates a capture gallery view for a previously created capture folder.
@@ -54,6 +61,11 @@ struct CaptureGalleryView: View {
                                         == captureFolderState.captureDir?.lastPathComponent)
         isCapturing = false
         hasBeenUploaded = false
+        
+        self._uploadManager = StateObject(
+            wrappedValue: UploadManager(captureDir: captureFolderState.captureDir!,
+                                        captureInfos: captureFolderState.captures)
+        )
     }
     
     var body: some View {
@@ -68,7 +80,7 @@ struct CaptureGalleryView: View {
             .frame(width: 0, height: 0)
             .disabled(true)
             
-            NavigationLink(destination: UploadView(model: model),
+            NavigationLink(destination: UploadView(model: model, uploadManager: uploadManager),
                             isActive: self.$showUploadView) {
                 EmptyView()
             }
@@ -119,18 +131,7 @@ struct CaptureGalleryView: View {
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarItems(trailing: HStack {
             Spacer()
-//            NewSessionButtonView(model: model, usingCurrentCaptureFolder: usingCurrentCaptureFolder)
-//                .padding(.horizontal, 5)
-//            if usingCurrentCaptureFolder {
-//                Button(action: {
-//                    self.showCaptureFolderView = true
-//                }) {
-//                    Image(systemName: "folder")
-//                }
-//            }
-//            if(!isCapturing && !hasBeenUploaded){
-//                UploadIconButtonView(showUploadView: self.$showUploadView)
-//            }
+            UploadIconButtonView(uploadManager: self.uploadManager, showUploadView: self.$showUploadView)
         })
     }
 }
@@ -159,23 +160,6 @@ struct NewSessionButtonView: View {
                 }, label: {
                     Image(systemName: "plus.circle")
                 })
-                .alert(isPresented: $showAlert) {
-                    Alert(
-                        title: Text("Notification"),
-                        message: Text("Applying the current camera setting?"),
-                        primaryButton: .default(Text("Yes")) {
-//                            model.applyCurrentCameraSettings(captureDirPath: lastCaptureUrl!)
-                            presentation.wrappedValue.dismiss()
-                        },
-                        secondaryButton: .default(Text("No"))
-                        {
-//                            if model.parametersLocked == true {
-//                                model.toggleCameraParametersLock()
-//                            }
-                            presentation.wrappedValue.dismiss()
-                        }
-                    )
-                }
             }
         }
 }
@@ -210,7 +194,7 @@ struct GalleryCell: View {
             .receive(on: DispatchQueue.main)
             .replaceError(with: CaptureInfo.FileExistence())
             .eraseToAnyPublisher()
-    }
+        }
     
     var body : some View {
         ZStack {
@@ -240,11 +224,11 @@ struct MetadataExistenceSummaryView: View {
         VStack {
             Spacer()
             HStack {
-                if existence.depth && existence.gravity {
+                if existence.depth {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(Color.green)
                         .padding(.all, paddingPixels)
-                } else if existence.depth || existence.gravity {
+                } else if existence.depth {
                     Image(systemName: "exclamationmark.circle.fill")
                         .foregroundColor(Color.yellow)
                         .padding(.all, paddingPixels)
@@ -279,17 +263,6 @@ struct MetadataExistenceView: View {
             
             Spacer()
             
-            if existence.gravity {
-                Image(systemName: "arrow.down.to.line.alt")
-                    .foregroundColor(Color.green)
-            } else {
-                Image(systemName: "xmark.circle")
-                    .foregroundColor(Color.red)
-            }
-            if textLabels {
-                Text("Gravity")
-                    .foregroundColor(.secondary)
-            }
         }
     }
 }
@@ -330,12 +303,25 @@ struct FullSizeImageView: View {
     }
 }
 
-#if DEBUG
-struct CaptureGalleryView_Previews: PreviewProvider {
-    static var previews: some View {
-        var datasetWriter = DatasetWriter()
-        let model = ARViewModel(datasetWriter: datasetWriter)
-        CaptureGalleryView(model: model)
-    }
-}
-#endif // DEBUG
+//struct UploadIconButtonView: View {
+//    @Binding var showUploadView: Bool
+//    var body: some View{
+//        Button {
+//            print("Pressed Upload!")
+//            self.showUploadView = true
+//        } label: {
+//            Image(systemName: "square.and.arrow.up")
+//        }
+//    }
+//}
+
+
+//#if DEBUG
+//struct CaptureGalleryView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        var datasetWriter = DatasetWriter()
+//        let model = ARViewModel(datasetWriter: datasetWriter)
+//        CaptureGalleryView(model: model)
+//    }
+//}
+//#endif // DEBUG

@@ -6,6 +6,10 @@ The app's top-level view.
 */
 
 import SwiftUI
+import os
+
+private let logger = Logger(subsystem: "com.lychen.CaptureSample",
+                            category: "ContentView")
 
 /// This is the root view for the app.
 struct ContentView: View {
@@ -59,12 +63,25 @@ struct ARViewTopPanel: View {
 
 struct ARViewBottomPanel: View {
     @ObservedObject var model: ARViewModel
+    @State private var showUploadView = false
+    @State private var showCaptureGalleryView = false
+
     
     var body: some View {
         VStack {
+            if model.captureFolderState != nil {
+                NavigationLink(destination: CaptureGalleryView(model: model),
+                               isActive: self.$showCaptureGalleryView) {
+                    EmptyView()
+                }
+                               .frame(width: 0, height: 0)
+                               .disabled(true)
+            }
+            
             Spacer()
             HStack(spacing: 20) {
-                if model.appState.writerState == .SessionNotStarted {
+                // MARK: positioning (bounding box)
+                if model.state == .positioning {
                     Spacer()
                     Button(action: {
                         model.resetWorldOrigin()
@@ -79,13 +96,15 @@ struct ARViewBottomPanel: View {
                     .cornerRadius(10)
                     
                     Button(action: {
-                        do {
-                            try model.datasetWriter.initializeProject()
-                            model.state = .capturing1
-                        }
-                        catch {
-                            print("\(error)")
-                        }
+//                        model.requestNewCaptureFolder()
+                        model.state = .capturing1
+//                        do {
+//                            try model.datasetWriter.initializeProject()
+//                                model.state = .capturing1
+//                            }
+//                            catch {
+//                                print("\(error)")
+//                            }
                     }) {
                         Text("Start")
                             .padding(.horizontal, 15)
@@ -96,11 +115,16 @@ struct ARViewBottomPanel: View {
                     .cornerRadius(10)
                 }
                 
-                if model.appState.writerState == .SessionStarted {
+                // MARK: capturing
+                if model.state == .capturing1 {
                     Spacer()
                     Button(action: {
                         model.datasetWriter.finalizeProject()
-                        model.state = .detecting
+                        self.showCaptureGalleryView = true
+                        logger.info("End Captue")
+                        if model.captureFolderState == nil {
+                            print("mode.captureFolderState does not exist")
+                        }
                     }) {
                         Text("End")
                             .padding(.horizontal, 20)
@@ -109,6 +133,7 @@ struct ARViewBottomPanel: View {
                     }
                     .background(Color.blue)
                     .cornerRadius(10)
+                    
                     Button(action: {
                         model.captureFrame()
                     }) {

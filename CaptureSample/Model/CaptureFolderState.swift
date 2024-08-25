@@ -27,19 +27,23 @@ class CaptureFolderState: ObservableObject {
     @Published var captureDir: URL? = nil
     @Published var captures: [CaptureInfo] = []
     
+    
+    // datasetWriter
+    static var manifest = Manifest()
+    static var projectName = ""
+    
     private var subscriptions = Set<AnyCancellable>()
     
     init(url captureDir: URL) {
         self.captureDir = captureDir
-        print("captureDir = \(self.captureDir!)")
         requestLoad()
     }
     
     func requestLoad() {
-        requestLoadCaptureInfo()
-            .receive(on: DispatchQueue.main)
-            .replaceError(with: [])
-            .assign(to: \.captures, on: self)
+        requestLoadCaptureInfo()  /// return a Future<[CaptureInfo], Error> 在背景加載圖像
+            .receive(on: DispatchQueue.main) /// 確保在 main thread 執行
+            .replaceError(with: [])     /// if errors happened, return []
+            .assign(to: \.captures, on: self)  /// 將結果 assign to "captures"
             .store(in: &subscriptions)
     }
     
@@ -63,6 +67,7 @@ class CaptureFolderState: ObservableObject {
     private func requestLoadCaptureInfo() -> Future<[CaptureInfo], Error> {
         // Iterate through all the image files in the directory, then extract
         // the photoIdString and id to create a CaptureInfo.
+        // 從資料夾中載入圖像文件並創建相應的 CaptureInfo 對象
         let future = Future<[CaptureInfo], Error> { promise in
             guard self.captureDir != nil else {
                 promise(.failure(.invalidCaptureDir))
@@ -74,10 +79,11 @@ class CaptureFolderState: ObservableObject {
                     let imgUrls = try FileManager.default
                         .contentsOfDirectory(at: self.captureDir!, includingPropertiesForKeys: [],
                                              options: [.skipsHiddenFiles])
-                        .filter { $0.isFileURL
-                            && $0.lastPathComponent.hasSuffix(CaptureInfo.imageSuffix)
+                        .filter { $0.isFileURL &&
+                            ($0.lastPathComponent.hasSuffix(CaptureInfo.imageSuffix) &&
+                            !$0.lastPathComponent.hasSuffix("_depth.png"))
                         }
-                    print("imgUrls: \(imgUrls)")
+                    logger.info("imgUrls: \(imgUrls)")
                     for imgUrl in imgUrls {
                         guard let photoIdString = try? CaptureInfo.photoIdString(from: imgUrl) else {
                             print("Can't get photoIdString from url: \"\(imgUrl)\"")
@@ -111,27 +117,22 @@ class CaptureFolderState: ObservableObject {
                                              appropriateFor: nil, create: false) else {
             return nil
         }
-        return documentsFolder.appendingPathComponent("Captures/", isDirectory: true)
+//        return documentsFolder.appendingPathComponent("Captures/", isDirectory: true)
+        return documentsFolder
     }
     
-    /// This method attempts to create a capture directory for outputting the images and metadata. It names
-    /// the subfolder based on the current time. If it's unable to create the directory, this method returns `nil`.
-    static func createCaptureDirectory() -> URL? {
-        // The app's Info.plist file enables sharing, which makes the app's
-        // documents directory visible in the Files app and allows sharing
-        // using AirDrop, Mail, or iCloud.
+    
+    static func initializeProject() -> URL? {  // createCaptureDirectory
         guard let capturesFolder = CaptureFolderState.capturesFolder() else {
             print("Can't get user document dir!")
             return nil
         }
         
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .medium
-        let timestamp = formatter.string(from: Date())
+        formatter.dateFormat = "YYMMddHHmmss"
+        self.projectName = formatter.string(from: Date())
         let newCaptureDir = capturesFolder
-            .appendingPathComponent(timestamp + "/", isDirectory: true)
+            .appendingPathComponent(projectName)
         
         print("Creating capture path: \"\(String(describing: newCaptureDir))\"")
         let capturePath = newCaptureDir.path
@@ -146,6 +147,21 @@ class CaptureFolderState: ObservableObject {
         guard exists && isDir.boolValue else {
             return nil
         }
+        
+        manifest = Manifest()
+        
+        // The first frame will set these properly
+        manifest.w = 0
+        manifest.h = 0
+        
+        // These don't matter since every frame will redefine them
+        manifest.flX = 1.0
+        manifest.flY =  1.0
+        manifest.cx =  320
+        manifest.cy =  240
+        
+        manifest.depthIntegerScale = 1.0
+        
         return newCaptureDir  /// file:///var/mobile/Containers/Data/Application/DA032602-1BCF-4E3C-AC0D-D8AF31147547/Documents/Captures/Aug%2017,%202024%20at%2010:33:35%E2%80%AFAM/
     }
     

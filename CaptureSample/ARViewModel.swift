@@ -236,11 +236,11 @@ class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
         }
         
         // 拍完達標要轉到下個 state
-        let capturedCount = self.checkpoints.filter { $1 == .captured }.count
-        if self.state == .capturing1 && capturedCount >= 3 {  // 方便開發，先簡單設定進入下個 state 的邏輯
-            print("Completed capturing!")
-            self.state = .training
-        }
+//        let capturedCount = self.checkpoints.filter { $1 == .captured }.count
+//        if self.state == .capturing1 && capturedCount >= 3 {  // 方便開發，先簡單設定進入下個 state 的邏輯
+//            print("Completed capturing!")
+//            self.state = .training
+//        }
     }
     
     func session(_ session: ARSession, cameraDidChangeTrackingState camera: ARCamera) {
@@ -379,7 +379,7 @@ class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
     private let sessionQueue = DispatchQueue(label: "ARViewModel: sessionQueue")
     
     private static func createNewCaptureFolder() throws -> CaptureFolderState {
-        guard let newCaptureDir = CaptureFolderState.createCaptureDirectory() else {
+        guard let newCaptureDir = CaptureFolderState.initializeProject() else {
             throw SetupError.failed(msg: "Can't create capture directory!")
         }
         return CaptureFolderState(url: newCaptureDir)

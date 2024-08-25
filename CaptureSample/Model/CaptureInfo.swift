@@ -18,7 +18,6 @@ struct CaptureInfo: Identifiable {
     struct FileExistence {
         var image: Bool = false
         var depth: Bool = false
-        var gravity: Bool = false
     }
     
     enum Error: Swift.Error {
@@ -26,7 +25,6 @@ struct CaptureInfo: Identifiable {
         case noSuchDirectory(URL)
     }
     
-//    static let imageSuffix: String = ".HEIC"
     static let imageSuffix: String = ".png"
     
     /// This is a unique identifier for the capture sample.
@@ -52,9 +50,6 @@ struct CaptureInfo: Identifiable {
         return CaptureInfo.depthUrl(in: captureDir, id: id)
     }
     
-//    var gravityUrl: URL {
-//        return CaptureInfo.gravityUrl(in: captureDir, id: id)
-//    }
     
     /// This method checks for the existence of the image and metadata files associated with this capture.
     /// This method uses a `Promise` instance to return the data asynchronously once it has finished
@@ -85,7 +80,6 @@ struct CaptureInfo: Identifiable {
         dispatchPrecondition(condition: .notOnQueue(.main))
         deleteHelper(delete: imageUrl, fileType: "image")
         deleteHelper(delete: depthUrl, fileType: "depth")
-//        deleteHelper(delete: gravityUrl, fileType: "gravity")
     }
     
     private func deleteHelper(delete: URL, fileType: String) {
@@ -109,8 +103,7 @@ struct CaptureInfo: Identifiable {
         var result = FileExistence()
         result.image = FileManager.default.fileExists(atPath: imageUrl(in: captureDir, id: id).path)
         result.depth = FileManager.default.fileExists(atPath: depthUrl(in: captureDir, id: id).path)
-        result.gravity = FileManager.default.fileExists(
-            atPath: gravityUrl(in: captureDir, id: id).path)
+
         return result
     }
     
@@ -142,7 +135,8 @@ struct CaptureInfo: Identifiable {
     
     /// This method returns the base name for a capture. It's based on the capture's unique identifier.
     static func photoIdString(for id: UInt32) -> String {
-        return String(format: "%@%04d", photoStringPrefix, id)
+        let idString = String(format: "%@%04d", photoStringPrefix, id)
+        return idString
     }
     
     static func photoIdString(from imageUrl: URL) throws -> String {
@@ -156,11 +150,6 @@ struct CaptureInfo: Identifiable {
     /// This method returns the file URL for the image data relative to a specified directory.
     static func imageUrl(in captureDir: URL, id: UInt32) -> URL {
         return captureDir.appendingPathComponent(photoIdString(for: id).appending(imageSuffix))
-    }
-    
-    /// This method returns the file URL for the gravity data relative to a specified directory.
-    static func gravityUrl(in captureDir: URL, id: UInt32) -> URL {
-        return captureDir.appendingPathComponent(photoIdString(for: id).appending("_gravity.TXT"))
     }
     
     /// This method returns the file URL for the depth data relative to a specified directory.
