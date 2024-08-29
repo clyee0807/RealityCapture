@@ -52,8 +52,7 @@ struct CaptureInfo: Identifiable {
     
     
     /// This method checks for the existence of the image and metadata files associated with this capture.
-    /// This method uses a `Promise` instance to return the data asynchronously once it has finished
-    /// checking.
+    /// This method uses a `Promise` instance to return the data asynchronously once it has finished checking.
     func checkFilesExist() -> Future<FileExistence, CaptureInfo.Error> {
         let future = Future<FileExistence, CaptureInfo.Error> { promise in
             CaptureInfo.loaderQueue.async {

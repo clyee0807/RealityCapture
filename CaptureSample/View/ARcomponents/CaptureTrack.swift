@@ -12,7 +12,10 @@ import RealityKit
 import SwiftUI
 import Combine
 
+private let logger = Logger(subsystem: "com.lychen.CaptureSample", category: "CaptureTrack")
+
 class CaptureTrack: Entity, HasAnchoring {
+    
     
     @ObservedObject var model: ARViewModel
     var originAnchor: AnchorEntity
@@ -22,9 +25,10 @@ class CaptureTrack: Entity, HasAnchoring {
 //    var checkpoints: [Int: PointStatus] = [:]
 
     var count: Int = 20
-    var radius: Float = 0.15
+    var radius: Float = 0.2
 
     private var cancellable: AnyCancellable?
+    private var cancellables = Set<AnyCancellable>()
     
     init(anchorPosition: SIMD3<Float>, originAnchor: AnchorEntity, model: ARViewModel) {
         self.model = model
@@ -94,18 +98,13 @@ class CaptureTrack: Entity, HasAnchoring {
             .sink (receiveCompletion: { loadCompletion in
                 switch loadCompletion {
                 case .failure(let error):
-//                    self.logger.error("Error loading \(filename) model: \(error.localizedDescription)")
                     print("Error loading \(filename) model: \(error.localizedDescription)")
                 case .finished:
-//                    self.logger.info("\(filename) model loaded successfully.")
                     print("\(filename) model loaded successfully.")
                 }
             }, receiveValue: { modelEntity in
                 var material = SimpleMaterial()
                 material.color = .init(tint: .green.withAlphaComponent(0.3))
-//                material.tintColor = UIColor.init(red: 0.0, green: 1.0, blue: 0.0, alpha: 0.3)
-//                material.baseColor = MaterialColorParameter.color(UIColor.green)
-//                material.isDoubleSided = true
                 modelEntity.model?.materials = [material]
 
                 modelEntity.position = self.anchorPosition + SIMD3<Float>(0, 0.001, 0)
@@ -116,13 +115,42 @@ class CaptureTrack: Entity, HasAnchoring {
             })
     }
     
+    private func asyncLoadCheckPointEntity(filename: String, position: SIMD3<Float>, name: String, direction: SIMD3<Float>) {
+        let cancellable = ModelEntity.loadModelAsync(named: filename)
+            .sink (receiveCompletion: { loadCompletion in
+                switch loadCompletion {
+                case .failure(let error):
+                    print("Error loading \(filename) model: \(error.localizedDescription)")
+                case .finished:
+                    print("\(filename) model loaded successfully.")
+                }
+            }, receiveValue: { modelEntity in
+                
+                var material = SimpleMaterial()
+                material.color = .init(tint: .red.withAlphaComponent(0.3))
+                modelEntity.model?.materials = [material]
+
+                modelEntity.position = position
+                
+                let up = SIMD3<Float>(1, 0, 0)
+                let rotation = simd_quatf(from: up, to: normalize(direction))
+                modelEntity.orientation = rotation
+                
+                modelEntity.scale = SIMD3<Float>(0.02, 0.02, 0.02)
+                modelEntity.name = name
+                self.points.append(modelEntity)
+                self.addChild(modelEntity)
+                
+            })
+        cancellable.store(in: &cancellables)
+    }
     
     private func createCheckPoints(center: SIMD3<Float>, count: Int) {
         self.count = count
         
         let fullCircle = Float.pi * 2
         let angleIncrement = fullCircle / Float(count)
-
+        
         for i in 0..<count {
             let angle = angleIncrement * Float(i)
             
@@ -130,17 +158,14 @@ class CaptureTrack: Entity, HasAnchoring {
             let z = sin(angle) * radius
             let entityPosition = SIMD3<Float>(center.x + x, center.y, center.z + z)
             
-            let mesh = MeshResource.generateSphere(radius: 0.002)
-            let material = SimpleMaterial(color: .red, isMetallic: false)
-            let sphereEntity = ModelEntity(mesh: mesh, materials: [material])
-            
-            sphereEntity.position = entityPosition
-            sphereEntity.collision = CollisionComponent(shapes: [.generateSphere(radius: 0.02)])
-            sphereEntity.name = "Point\(i)"
-            
-            points.append(sphereEntity)
+            let direction = center - entityPosition  // 面向 center 的方向
+            let name = "Point\(i)"
+            asyncLoadCheckPointEntity(filename: "checkpoint.usdz", 
+                                      position: entityPosition,
+                                      name: name,
+                                      direction: direction)
             model.checkpoints[i] = .initialized
-            self.addChild(sphereEntity)
         }
+        logger.info("Children of captureTrack: \(self.children.map { $0.name })")
     }
 }

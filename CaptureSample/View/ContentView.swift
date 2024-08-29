@@ -122,8 +122,9 @@ struct ARViewBottomPanel: View {
                         model.datasetWriter.finalizeProject()
                         self.showCaptureGalleryView = true
                         logger.info("End Captue")
-                        if model.captureFolderState == nil {
-                            print("mode.captureFolderState does not exist")
+                        if model.captureFolderState != nil {
+                            print("captures:\n \(model.captureFolderState?.captures)")
+                            print("captureDir: \(model.captureFolderState?.captureDir)")
                         }
                     }) {
                         Text("End")

@@ -118,7 +118,7 @@ class DatasetWriter {
     func getFrameMetadata(_ frame: ARFrame, withDepth: Bool = false) -> Manifest.Frame {
         let frameName = getCurrentFrameName()
         let filePath = "IMG_\(frameName).png"
-        let depthPath = "IMG_\(frameName)_depth.tiff"
+        let depthPath = "IMG_\(frameName)_depth.TIF"
         let manifest_frame = Manifest.Frame(
             filePath: filePath,
             depthPath: withDepth ? depthPath : nil,
@@ -149,7 +149,7 @@ class DatasetWriter {
     
     func writeFrameToDisk(frame: ARFrame, viewModel: ARViewModel, useDepthIfAvailable: Bool = true) {
         let frameName =  "IMG_\(getCurrentFrameName()).png"
-        let depthFrameName =  "IMG_\(getCurrentFrameName())_depth.tiff"
+        let depthFrameName =  "IMG_\(getCurrentFrameName())_depth.TIF"
         let baseDir = projectDir//.appendingPathComponent("images")
         let fileName = baseDir.appendingPathComponent(frameName)
         let depthFileName = baseDir.appendingPathComponent(depthFrameName)
@@ -191,13 +191,17 @@ class DatasetWriter {
                             try tiffData.write(to: depthFileName)
                         }
                     }
+                    
+                    // create captureInfo
+                    let captureInfo = CaptureInfo(id: UInt32(self.currentFrameCounter-1), captureDir: self.projectDir)
+                    DispatchQueue.main.async {
+                        self.manifest.frames.append(frameMetadata)
+                        self.captureFolderState?.captures.append(captureInfo)
+                        print("currentFrameCounter = \(self.currentFrameCounter)\nframeName = \(frameName)")
+                    }
                 }
                 catch {
                     print(error)
-                }
-                DispatchQueue.main.async {
-                    self.manifest.frames.append(frameMetadata)
-                                        
                 }
             }
             currentFrameCounter += 1

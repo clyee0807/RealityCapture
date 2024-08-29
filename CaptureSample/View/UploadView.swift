@@ -30,7 +30,7 @@ struct UploadView: View {
                 NameTextField()
                 ModelTypeView()
                 Spacer()
-                UploadButtonView(model: model, isUploading: $isUploading)
+                UploadButtonView(model: model, uploadManager: uploadManager, isUploading: $isUploading)
             }
             .padding(.horizontal, 20.0)
             
@@ -125,11 +125,16 @@ struct ModelTypeView: View {
 
 struct UploadButtonView: View {
     @ObservedObject var model: ARViewModel
+    @ObservedObject var uploadManager: UploadManager
     @Binding var isUploading: Bool
+    
     var body: some View {
         Button(action: {
 //            model.startStimulateUpload()
             isUploading = true
+            Task {
+                await uploadManager.getAllCaptures()
+            }
         }, label: {
             Text("Upload")
                 .padding(.horizontal, 20.0)
@@ -156,7 +161,8 @@ struct UploadIconButtonView: View {
         Button(action: {
             print("Press Upload Icon!!")
             Task{
-                await uploadManager.upload()
+//                await uploadManager.upload()
+                await uploadManager.loadCaptureData()
             }
             showUploadView = true
         }, label: {

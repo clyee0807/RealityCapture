@@ -148,19 +148,19 @@ class CaptureFolderState: ObservableObject {
             return nil
         }
         
-        manifest = Manifest()
-        
-        // The first frame will set these properly
-        manifest.w = 0
-        manifest.h = 0
-        
-        // These don't matter since every frame will redefine them
-        manifest.flX = 1.0
-        manifest.flY =  1.0
-        manifest.cx =  320
-        manifest.cy =  240
-        
-        manifest.depthIntegerScale = 1.0
+//        manifest = Manifest()
+//        
+//        // The first frame will set these properly
+//        manifest.w = 0
+//        manifest.h = 0
+//        
+//        // These don't matter since every frame will redefine them
+//        manifest.flX = 1.0
+//        manifest.flY =  1.0
+//        manifest.cx =  320
+//        manifest.cy =  240
+//        
+//        manifest.depthIntegerScale = 1.0
         
         return newCaptureDir  /// file:///var/mobile/Containers/Data/Application/DA032602-1BCF-4E3C-AC0D-D8AF31147547/Documents/Captures/Aug%2017,%202024%20at%2010:33:35%E2%80%AFAM/
     }

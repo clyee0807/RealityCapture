@@ -33,6 +33,7 @@
 		D99FB2A22C6E983B00A78EA6 /* Coordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D99FB2A12C6E983B00A78EA6 /* Coordinator.swift */; };
 		D99FB2A42C77A05100A78EA6 /* UploadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D99FB2A32C77A05100A78EA6 /* UploadManager.swift */; };
 		D99FB2A62C7B97D600A78EA6 /* hemisphere.usdz in Resources */ = {isa = PBXBuildFile; fileRef = D99FB2A52C7B97D600A78EA6 /* hemisphere.usdz */; };
+		D99FB2AA2C80546500A78EA6 /* checkpoint.usdz in Resources */ = {isa = PBXBuildFile; fileRef = D99FB2A92C80546500A78EA6 /* checkpoint.usdz */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -67,6 +68,7 @@
 		D99FB2A12C6E983B00A78EA6 /* Coordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coordinator.swift; sourceTree = "<group>"; };
 		D99FB2A32C77A05100A78EA6 /* UploadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadManager.swift; sourceTree = "<group>"; };
 		D99FB2A52C7B97D600A78EA6 /* hemisphere.usdz */ = {isa = PBXFileReference; lastKnownFileType = file.usdz; path = hemisphere.usdz; sourceTree = "<group>"; };
+		D99FB2A92C80546500A78EA6 /* checkpoint.usdz */ = {isa = PBXFileReference; lastKnownFileType = file.usdz; path = checkpoint.usdz; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -115,11 +117,10 @@
 				D99FB2952C6D199500A78EA6 /* View */,
 				D99FB28E2C6D191000A78EA6 /* Model */,
 				C9BA144425EF052300A19324 /* AsyncImageHelpers.swift */,
-				C9605AE825CCCD1200FDB64F /* Capture.swift */,
 				C9516ADA25F090FE00DA396D /* TriggerEveryTimer.swift */,
-				C9BF99A025E0808D00707ADC /* ImageLoader.swift */,
 				C96059EB25CA1A5E00FDB64F /* PhotoCaptureDelegate.swift */,
 				C9E38E1625C8CB5D00171AB3 /* Assets.xcassets */,
+				D99FB2A92C80546500A78EA6 /* checkpoint.usdz */,
 				D99FB2A52C7B97D600A78EA6 /* hemisphere.usdz */,
 				C9E38E1B25C8CB5D00171AB3 /* Info.plist */,
 				C9E38E1825C8CB5D00171AB3 /* Preview Content */,
@@ -151,8 +152,10 @@
 				D99FB2932C6D196B00A78EA6 /* AppState.swift */,
 				C91EEE4C25EDBE46009FD603 /* CaptureFolderState.swift */,
 				C9A2DCE725F803A8005DCCBB /* CaptureInfo.swift */,
+				C9605AE825CCCD1200FDB64F /* Capture.swift */,
 				D99FB29D2C6D1AEC00A78EA6 /* Utils.swift */,
 				D99FB2A32C77A05100A78EA6 /* UploadManager.swift */,
+				C9BF99A025E0808D00707ADC /* ImageLoader.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -243,6 +246,7 @@
 				D99FB2A62C7B97D600A78EA6 /* hemisphere.usdz in Resources */,
 				C9E38E1A25C8CB5D00171AB3 /* Preview Assets.xcassets in Resources */,
 				C9E38E1725C8CB5D00171AB3 /* Assets.xcassets in Resources */,
+				D99FB2AA2C80546500A78EA6 /* checkpoint.usdz in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

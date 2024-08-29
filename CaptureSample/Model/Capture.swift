@@ -34,9 +34,6 @@ struct Capture: Identifiable {
     /// This property holds the depth data in TIFF format.
     var depthData: Data? = nil
     
-    /// This is the phone's gravity vector at the moment the phone captured the image.
-    var gravity: CMAcceleration? = nil
-    
     /// This view displays the full-size image.
     var uiImage: UIImage {
         return UIImage(data: photo.fileDataRepresentation()!, scale: 1.0)!
@@ -110,3 +107,20 @@ struct Capture: Identifiable {
     }
 }
 
+
+// MARK: ResponseStructure.swift
+struct CreateCaptureResponse: Codable {
+    struct Data: Codable {
+        let id, name: String
+        let images, tasks: [String]
+        let locked: Bool
+        let imagesFolder: String?
+
+        enum CodingKeys: String, CodingKey {
+            case id = "_id"
+            case name, images, tasks, locked, imagesFolder
+        }
+    }
+    let data: Data
+    let message: String
+}
