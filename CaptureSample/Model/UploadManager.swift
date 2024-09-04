@@ -8,9 +8,33 @@
 
 import Foundation
 import os
+import SwiftUI
 
 private let logger = Logger(subsystem: "com.lychen.CaptureSample",
                             category: "UploadManager")
+
+struct Metadata: Codable {
+    struct Frame : Codable {
+        let file_path: String
+        let depth_path: String?
+        let transform_matrix: [[Float]]
+        let timestamp: TimeInterval
+        let fl_x: Float
+        let fl_y: Float
+        let cx: Float
+        let cy: Float
+        let w: Int
+        let h: Int
+    }
+    var w: Int = 0
+    var h: Int = 0
+    var fl_x: Float = 0
+    var fl_y: Float = 0
+    var cx: Float = 0
+    var cy: Float = 0
+    var depthIntegerScale : Float?
+    var frames: [Frame] = [Frame]()
+}
 
 // extension for "static"
 extension CaptureInfo {
@@ -50,9 +74,13 @@ private enum getDataError: Error {
 }
 
 class UploadManager: ObservableObject {
-
+    @ObservedObject var model: ARViewModel
+    
     // http url information
-    private let localHostBaseUrl: URL? = URL(string: "http://192.168.31.115:3001") ?? nil
+//    private let localHostBaseUrl: URL? = URL(string: "http://192.168.31.115:3001") ?? nil  // home
+//    private let localHostBaseUrl: URL? = URL(string: "http://192.168.0.10:3001") ?? nil  // macbook
+    private let localHostBaseUrl: URL? = URL(string: "http://172.20.10.6:3001") ?? nil  // windows
+    
     private let backendBaseURL: URL? = nil
     private let isTesting: Bool = true
     private var backendUrl: URL? {
@@ -64,7 +92,7 @@ class UploadManager: ObservableObject {
     }
     
     // return data
-    private var returnedCaptureId: String? = nil
+    private var captureId: String? = nil
     private var returnedImageIds: [String]? = nil
     
     private var doneCreateCapture: Bool = false
@@ -88,7 +116,11 @@ class UploadManager: ObservableObject {
     private var captureInfos: [CaptureInfo]
     private var captureDir: URL
     
-    init(captureDir: URL, captureInfos: [CaptureInfo]) {
+    @Published var captureName: String = ""
+    @Published var captureTask: String = "COLMAP"
+    
+    init(model: ARViewModel, captureDir: URL, captureInfos: [CaptureInfo]) {
+        self.model = model
         self.captureDir = captureDir
         self.captureInfos = captureInfos
     }
@@ -134,32 +166,51 @@ class UploadManager: ObservableObject {
         return loadedCapture
     }
     
-    func loadCaptureData() async {
-        DispatchQueue.main.async {
-            self.doneUploadCaptureData = false
-        }
+    private func loadMetadatafromDisk() -> Metadata? {
+        let file_path = CaptureInfo.metadataUrl(in: captureDir)
+        print("file_path: \(file_path)")
         
-        await withTaskGroup(of: perCapture.self, body: { loadTaskGroup in
-            for captureInfo in self.captureInfos {
-                loadTaskGroup.addTask {
-                    return self.loadCaptureData(captureId: captureInfo.id)
-                }
-            }
-            
-            print("Sort CaptureData: ")
-            for await result in loadTaskGroup {
-                DispatchQueue.main.async {
-                    self.captureDatas.append(result)
-                    self.captureDatas.sort { $0.id! < $1.id! }
-                    print("  capture id: \(result.id!)")
-                }
-            }
-        })
-        
-        DispatchQueue.main.async {
-            self.doneUploadCaptureData = true
+        do {
+            let json = try Data(contentsOf: file_path)
+            let decoder = JSONDecoder()
+            let metadata = try decoder.decode(Metadata.self, from: json)
+            return metadata
+        } catch {
+            logger.error("Error loading metadata.json: \(error)")
+            return nil
         }
     }
+    
+    // MARK: - backend API
+    enum UploadState {
+        case idle
+        case loading
+        case doneLoad
+        case callingCreateCapture
+        case doneCreateCapture
+        case callingUpdateCapture
+        case doneUpdateCapture
+        case callingCreateTask
+        case doneCreateTask
+        case callingLockCapture
+        case doneLockCapture
+        case callingUploadImage
+        case doneUploadImage
+        case failed
+    }
+    private func performStateTransition(from fromState: UploadState, to toState: UploadState) {
+        logger.log("Set UploadState to \(String(describing: toState))")
+    }
+    
+    @Published var uploadState: UploadState = .idle {
+        didSet {
+            if uploadState != oldValue {
+                performStateTransition(from: oldValue, to: uploadState)
+            }
+        }
+    }
+    @Published var uploadedImageNum: Int = 0
+    
     
     func getAllCaptures() async {
         logger.info("GET: get all captures")
@@ -176,9 +227,6 @@ class UploadManager: ObservableObject {
                 return
             }
             
-//            if let res = String(data: data, encoding: .utf8) {
-//                logger.log("Response: \(res)")
-//            }
             do {
                 if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
                    let captures = json["data"] as? [[String: Any]] {
@@ -200,10 +248,13 @@ class UploadManager: ObservableObject {
     
     func createCapture() async {
         logger.info("POST: create capture")
+        DispatchQueue.main.async {
+            self.uploadState = .callingCreateCapture
+        }
+        
         let url = URL(string: "\(backendUrl!)/capture")
         
-        struct emptyData: Encodable {
-        }
+        struct emptyData: Encodable {}
         
         var request = URLRequest(url: url!)
         request.httpMethod = "POST"
@@ -213,42 +264,173 @@ class UploadManager: ObservableObject {
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
             if let error = error {
                 logger.error("Error: \(error.localizedDescription)")
-                self.doneCreateCapture = true
+                DispatchQueue.main.async {
+                    self.uploadState = .failed
+                }
                 return
             }
             
             guard let data = data else {
                 logger.error("No data received")
-                self.doneCreateCapture = true
+                DispatchQueue.main.async {
+                    self.uploadState = .failed
+                }
+                return
+            }
+            
+            do {
+                if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
+                   let dataDict = json["data"] as? [String: Any],
+                   let id = dataDict["_id"] as? String {
+                    DispatchQueue.main.async {
+                        self.captureId = id
+                        logger.info("_id: \(self.captureId)")
+                        self.uploadState = .doneCreateCapture
+                    }
+                } else {
+                    logger.error("Failed to parse response JSON")
+                    DispatchQueue.main.async {
+                        self.uploadState = .failed
+                    }
+                }
+            } catch {
+                logger.error("JSON parsing error: \(error.localizedDescription)")
+            }
+        }
+        task.resume()
+    }
+    
+    
+    struct CaptureRequest: Codable {
+        struct cameraMetadata : Codable {
+            let width: Int
+            let height: Int
+        }
+        let name: String
+        var cameraMetadata: cameraMetadata?
+    }
+    func updateCapture(name: String) async {
+        logger.info("PUT: update capture")
+        DispatchQueue.main.async {
+            self.uploadState = .callingUpdateCapture
+        }
+        
+        guard let metadata = loadMetadatafromDisk() else {
+            logger.error("Failed to load metadata from metadata.json")
+            return
+        }
+        
+        let width = metadata.w
+        let height = metadata.h
+        print("metadata.w: \(width)")
+        print("metadata.h: \(height)")
+        
+        
+        let url = URL(string: "\(backendUrl!)/capture/\(self.captureId!)")
+        
+        let captureRequest = CaptureRequest(
+            name: name,
+            cameraMetadata: CaptureRequest.cameraMetadata(width: width, 
+                                                          height: height)
+        )
+        
+        
+        var request = URLRequest(url: url!)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try! JSONEncoder().encode(captureRequest)
+        
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                logger.error("Error: \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    self.uploadState = .doneUpdateCapture
+                }
+                return
+            }
+            
+            guard let data = data else {
+                logger.error("No data received")
+                DispatchQueue.main.async {
+                    self.uploadState = .doneUpdateCapture
+                }
                 return
             }
             
             if let responseString = String(data: data, encoding: .utf8) {
                 print("Response: \(responseString)")
             }
-            self.createCaptureResponse = data
-            self.doneCreateCapture = true
+//            self.updateCaptureResponse = data
+            DispatchQueue.main.async {
+                self.uploadState = .doneUpdateCapture
+            }
+
+//            do {
+//                if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
+//                   let dataDict = json["data"] as? [String: Any],
+//                   let id = dataDict["_id"] as? String {
+//
+//                } else {
+//                    logger.error("Failed to parse response JSON")
+//                }
+//            } catch {
+//                logger.error("JSON parsing error: \(error.localizedDescription)")
+//            }
         }
         task.resume()
     }
     
-    
-
-    func upload() async {
-        await loadCaptureData()
+    func loadCaptureData() async {
         DispatchQueue.main.async {
-            self.captureDatas = self.captureDatas.sorted { $0.id! < $1.id! }
-            print("after sort")
-            for capture in self.captureDatas {
-                print("  capture id: \(capture.id!)")
+            self.uploadState = .loading
+        }
+//        if !captureDatas.isEmpty {
+//            logger.log("imageData of current folder is not empty.")
+//            DispatchQueue.main.async {
+//                self.captureDatas.removeAll()
+//            }
+//        }
+        
+        await withTaskGroup(of: perCapture.self, body: { loadTaskGroup in
+            for captureInfo in self.captureInfos {
+                loadTaskGroup.addTask {
+                    return await self.loadCaptureData(captureId: captureInfo.id)
+                }
             }
-            // upload captureDatas to backend ...
-            // TODO
+            
+            print("Sort CaptureData: ")
+            for await result in loadTaskGroup {
+                DispatchQueue.main.async {
+                    self.captureDatas.append(result)
+                    self.captureDatas.sort { $0.id! < $1.id! }
+                    print("  capture id: \(result.id!)")
+                }
+            }
+        })
+        
+        DispatchQueue.main.async {
+            self.uploadState = .doneLoad
         }
     }
     
-    static func assignUploadManagerToFolderState(folderState: CaptureFolderState) {
-        //folderState.uploadManeger = UploadManager(captureDir: folderState.captureDir!, captureInfos: folderState.captures)
+    func upload() async {
+        await createCapture()
+        
+        while uploadState != .doneCreateCapture {
+            await Task.yield()
+        }
+        if uploadState == .doneCreateCapture {
+            logger.info("update capture, id = \(self.captureId), captureName = \(self.captureName)")
+            await updateCapture(name: self.captureName)
+        }
+        
+//        while uploadState != .doneUpdateCapture {
+//            await Task.yield()
+//        }
+//        if uploadState == .doneUpdateCapture {
+//            await uploadImages()  // TODO: is reupload?
+//        }
+//
     }
 }
 

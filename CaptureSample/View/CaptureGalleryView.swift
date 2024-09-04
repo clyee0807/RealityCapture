@@ -48,7 +48,8 @@ struct CaptureGalleryView: View {
         hasBeenUploaded = false
         
         self._uploadManager = StateObject(
-            wrappedValue: UploadManager(captureDir: model.captureFolderState!.captureDir!,
+            wrappedValue: UploadManager(model: model,
+                                        captureDir: model.captureFolderState!.captureDir!,
                                         captureInfos: model.captureFolderState!.captures)
         )
     }
@@ -63,7 +64,8 @@ struct CaptureGalleryView: View {
         hasBeenUploaded = false
         
         self._uploadManager = StateObject(
-            wrappedValue: UploadManager(captureDir: captureFolderState.captureDir!,
+            wrappedValue: UploadManager(model: model,
+                                        captureDir: captureFolderState.captureDir!,
                                         captureInfos: captureFolderState.captures)
         )
     }

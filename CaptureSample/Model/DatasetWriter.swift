@@ -38,7 +38,7 @@ class DatasetWriter {
         case SessionStarted
     }
     
-    var manifest = Manifest()
+    var manifest: Manifest = Manifest()
     var projectName = ""
     var projectDir = getDocumentsDirectory()
     var useDepthIfAvailable = true
@@ -111,7 +111,7 @@ class DatasetWriter {
     }
     
     func getCurrentFrameName() -> String {
-        let frameName = String(format: "%04d", currentFrameCounter)
+        let frameName = String(format: "%04d", currentFrameCounter-1)
         return frameName
     }
     
@@ -148,6 +148,8 @@ class DatasetWriter {
     }
     
     func writeFrameToDisk(frame: ARFrame, viewModel: ARViewModel, useDepthIfAvailable: Bool = true) {
+        currentFrameCounter += 1
+        
         let frameName =  "IMG_\(getCurrentFrameName()).png"
         let depthFrameName =  "IMG_\(getCurrentFrameName())_depth.TIF"
         let baseDir = projectDir//.appendingPathComponent("images")
@@ -182,14 +184,18 @@ class DatasetWriter {
                     // save image into png
                     let rgbData = rgbBuffer.pngData()
                     try rgbData?.write(to: fileName)
+                    print("Write fileName: \(frameName)")
 
                     // save depth into tiff
                     if let depthBuffer = depthBuffer, useDepth {
                         let ciImage = CIImage(cvImageBuffer: depthBuffer)
                         let ciContext = CIContext()
                         if let tiffData = ciContext.tiffRepresentation(of: ciImage, format: .L16, colorSpace: CGColorSpaceCreateDeviceGray(), options: [:]) {
+                            print("Write depthFileName: \(depthFrameName)")
                             try tiffData.write(to: depthFileName)
                         }
+                    } else {
+                        print("Depth buffer is nil")
                     }
                     
                     // create captureInfo
@@ -197,14 +203,14 @@ class DatasetWriter {
                     DispatchQueue.main.async {
                         self.manifest.frames.append(frameMetadata)
                         self.captureFolderState?.captures.append(captureInfo)
-                        print("currentFrameCounter = \(self.currentFrameCounter)\nframeName = \(frameName)")
+                        print("Write captureInfo: currentFrameCounter = \(self.currentFrameCounter)frameName = \(frameName)")
                     }
                 }
                 catch {
                     print(error)
                 }
             }
-            currentFrameCounter += 1
+//            currentFrameCounter += 1
         }
     }
     

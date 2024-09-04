@@ -121,6 +121,7 @@ struct ARViewBottomPanel: View {
                     Button(action: {
                         model.datasetWriter.finalizeProject()
                         self.showCaptureGalleryView = true
+                        model.session?.pause()
                         logger.info("End Captue")
                         if model.captureFolderState != nil {
                             print("captures:\n \(model.captureFolderState?.captures)")

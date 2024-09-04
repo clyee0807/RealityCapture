@@ -8,6 +8,10 @@
 
 import Foundation
 import SwiftUI
+import os
+
+private let logger = Logger(subsystem: "com.lychen.CaptureSample", category: "UploadView")
+
 
 struct UploadView: View {
     @ObservedObject var model: ARViewModel
@@ -15,6 +19,9 @@ struct UploadView: View {
     
     @State var isUploading: Bool = false
     //@State var backToInitView: Bool = false
+    
+    @State var name: String = ""
+    
     init(model: ARViewModel, uploadManager: UploadManager){
         self.model = model
         self.uploadManager = uploadManager
@@ -27,8 +34,8 @@ struct UploadView: View {
             VStack{
                 // there may be a carousel showing images to upload...
                 Spacer()
-                NameTextField()
-                ModelTypeView()
+                NameTextField(uploadManager: uploadManager)
+                TaskTypeView(uploadManager: uploadManager)
                 Spacer()
                 UploadButtonView(model: model, uploadManager: uploadManager, isUploading: $isUploading)
             }
@@ -44,9 +51,12 @@ struct UploadView: View {
 
 struct NameTextField: View {
     @State var name: String = ""
-    init(){
+    @ObservedObject var uploadManager: UploadManager
+    init(uploadManager: UploadManager){
         UITextField.appearance().backgroundColor = .lightGray
+        self.uploadManager = uploadManager
     }
+    
     var body: some View {
         VStack{
             HStack{
@@ -57,11 +67,14 @@ struct NameTextField: View {
                 Spacer()
             }
             
-            TextField("\(name)", text: $name)
+            TextField("Enter name", text: $name)
                 .frame(height: 40)
                 .textFieldStyle(.roundedBorder)
                 .foregroundColor(.black)
-                .onSubmit {}
+                .onSubmit {
+                    uploadManager.captureName = name
+                    logger.info("uploadManager.captureName: \(uploadManager.captureName)")
+                }
         }
         Spacer()
             .frame(height: 30)
@@ -69,40 +82,39 @@ struct NameTextField: View {
 }
 
 class SelectedIndex: ObservableObject{
+    let indexToTask = ["COLMAP", "GS", "Sugar", "None"]
+    @ObservedObject var uploadManager: UploadManager
     @Published var index: Int {
         didSet{
-            if index == 0{
-            }
-            else if index == 1{
-            }
-            else if index == 2{
-            }
-            else if index == 3{
-            }
+            uploadManager.captureTask = indexToTask[index]
+            logger.info("uploadManager.captureTask: \(self.uploadManager.captureTask)")
         }
     }
-    init(index: Int){
+    init(index: Int, uploadManager: UploadManager){
         self.index = index
+        self.uploadManager = uploadManager
     }
 }
 
-struct ModelTypeView: View {
+struct TaskTypeView: View {
     @StateObject var selectedIndex: SelectedIndex
-    
-    init(){
+    @ObservedObject var uploadManager: UploadManager
+
+    init(uploadManager: UploadManager){
         UISegmentedControl.appearance().selectedSegmentTintColor = .white
         UISegmentedControl.appearance().backgroundColor = .lightGray
         UISegmentedControl.appearance().tintColor = .black
         UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor : UIColor.black], for: .normal)
         UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor : UIColor.black], for: .selected)
         let init_index = 0
-        self._selectedIndex = StateObject(wrappedValue: SelectedIndex(index: init_index))
+        self._selectedIndex = StateObject(wrappedValue: SelectedIndex(index: init_index, uploadManager: uploadManager))
+        self.uploadManager = uploadManager
     }
     
     var body: some View {
         VStack{
             HStack{
-                Text("Mode")
+                Text("Task")
                     .font(.title2)
                     .foregroundColor(Color.white)
                     .multilineTextAlignment(.leading)
@@ -127,13 +139,16 @@ struct UploadButtonView: View {
     @ObservedObject var model: ARViewModel
     @ObservedObject var uploadManager: UploadManager
     @Binding var isUploading: Bool
+//    @Binding var name: String
     
     var body: some View {
         Button(action: {
-//            model.startStimulateUpload()
             isUploading = true
             Task {
-                await uploadManager.getAllCaptures()
+                await uploadManager.upload()
+//                await uploadManager.getAllCaptures()
+//                await uploadManager.createCapture()
+//                await uploadManager.updateCapture(name: name)
             }
         }, label: {
             Text("Upload")
@@ -161,7 +176,6 @@ struct UploadIconButtonView: View {
         Button(action: {
             print("Press Upload Icon!!")
             Task{
-//                await uploadManager.upload()
                 await uploadManager.loadCaptureData()
             }
             showUploadView = true
