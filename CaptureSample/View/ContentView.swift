@@ -97,6 +97,8 @@ struct ARViewBottomPanel: View {
                     
                     Button(action: {
 //                        model.requestNewCaptureFolder()
+                        // remove bounding box
+//                        model.removeAllChildren()
                         model.state = .capturing1
 //                        do {
 //                            try model.datasetWriter.initializeProject()
@@ -117,7 +119,7 @@ struct ARViewBottomPanel: View {
                 
                 // MARK: capturing
                 if model.state == .capturing1 {
-                    Spacer()
+                    
                     Button(action: {
                         model.datasetWriter.finalizeProject()
                         self.showCaptureGalleryView = true
@@ -130,25 +132,71 @@ struct ARViewBottomPanel: View {
                     }) {
                         Text("End")
                             .padding(.horizontal, 20)
-                            .padding(.vertical, 5)
+                            .padding(.vertical, 8)
                             .foregroundColor(.black)
                     }
                     .background(Color.blue)
                     .cornerRadius(10)
                     
-                    Button(action: {
-                        model.captureFrame()
-                    }) {
-                        Text("Capture")
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 5)
-                            .foregroundColor(.black)
-                    }
-                    .background(Color.blue)
-                    .cornerRadius(10)
+                    Spacer()
+//                    Button(action: {
+//                        model.captureFrame()
+//                    }) {
+//                        Text("Capture")
+//                            .padding(.horizontal, 20)
+//                            .padding(.vertical, 5)
+//                            .foregroundColor(.black)
+//                    }
+//                    .background(Color.blue)
+//                    .cornerRadius(10)
+                    CaptureButton(model: model)
                 }
             }
             .padding()
+        }
+    }
+}
+
+struct CaptureButton: View {
+    static let outerDiameter: CGFloat = 80
+    static let strokeWidth: CGFloat = 4
+    static let innerPadding: CGFloat = 10
+    static let innerDiameter: CGFloat = CaptureButton.outerDiameter - CaptureButton.strokeWidth - CaptureButton.innerPadding
+    static let rootTwoOverTwo: CGFloat = CGFloat(2.0.squareRoot() / 2.0)
+    static let squareDiameter: CGFloat = CaptureButton.innerDiameter * CaptureButton.rootTwoOverTwo - CaptureButton.innerPadding
+    
+    @ObservedObject var model: ARViewModel
+    
+    init(model: ARViewModel) {
+        self.model = model
+    }
+    
+    var body: some View {
+        Button(action: {
+            model.captureFrame()
+        }, label: {
+            ManualCaptureButtonView()
+//            if model.isAutoCaptureActive {
+//                AutoCaptureButtonView(model: model)
+//            } else {
+//                ManualCaptureButtonView()
+//            }
+        })//.disabled(!model.isCameraAvailable || !model.readyToCapture)
+    }
+}
+struct ManualCaptureButtonView: View {
+    var body: some View {
+        ZStack {
+            Circle()
+                .strokeBorder(Color.white, lineWidth: CaptureButton.strokeWidth)
+                .frame(width: CaptureButton.outerDiameter,
+                       height: CaptureButton.outerDiameter,
+                       alignment: .center)
+            Circle()
+                .foregroundColor(Color.white)
+                .frame(width: CaptureButton.innerDiameter,
+                       height: CaptureButton.innerDiameter,
+                       alignment: .center)
         }
     }
 }

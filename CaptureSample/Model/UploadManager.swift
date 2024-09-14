@@ -74,11 +74,9 @@ private enum getDataError: Error {
 }
 
 class UploadManager: ObservableObject {
-    @ObservedObject var model: ARViewModel
+//    @ObservedObject var model: ARViewModel
     
     // http url information
-//    private let localHostBaseUrl: URL? = URL(string: "http://192.168.31.115:3001") ?? nil  // home
-//    private let localHostBaseUrl: URL? = URL(string: "http://192.168.0.10:3001") ?? nil  // macbook
     private let localHostBaseUrl: URL? = URL(string: "http://172.20.10.6:3001") ?? nil  // windows
     
     private let backendBaseURL: URL? = nil
@@ -115,17 +113,18 @@ class UploadManager: ObservableObject {
     @Published var captureDatas: [perCapture] = [perCapture]()
     private var captureInfos: [CaptureInfo]
     private var captureDir: URL
+    private var isReupload: Bool
     
     @Published var captureName: String = ""
     @Published var captureTask: String = "COLMAP"
     
-    init(model: ARViewModel, captureDir: URL, captureInfos: [CaptureInfo]) {
-        self.model = model
-        self.captureDir = captureDir
-        self.captureInfos = captureInfos
+    init(captureFolderState: CaptureFolderState, isReupload: Bool) {
+        self.captureDir = captureFolderState.captureDir!
+        self.captureInfos = captureFolderState.captures
+        self.isReupload = isReupload
     }
     
-    
+    // MARK: store information
     private func getImageFromDisk(captureId: UInt32) throws -> Data {
         let file_path = CaptureInfo.imageUrl(in: captureDir, id: captureId)
         var imageData: Data
@@ -168,7 +167,7 @@ class UploadManager: ObservableObject {
     
     private func loadMetadatafromDisk() -> Metadata? {
         let file_path = CaptureInfo.metadataUrl(in: captureDir)
-        print("file_path: \(file_path)")
+        logger.info("load Metadata from \(file_path)")
         
         do {
             let json = try Data(contentsOf: file_path)
@@ -180,6 +179,48 @@ class UploadManager: ObservableObject {
             return nil
         }
     }
+    
+    func loadCaptureIdfromDisk() {  // getBackendCaptureId()
+        if(isReupload) {
+            let filePath = self.captureDir.appendingPathComponent("captureId.txt")
+            do {
+                let backendCaptureId = try String(contentsOf: filePath, encoding: .utf8)
+                print("load id from captureId.txt: \(backendCaptureId)")
+                self.captureId = backendCaptureId
+            } catch {
+                logger.error("Cannot find captureId.txt")
+            }
+        }
+        //if(createCaptureResponse == nil) {
+        //    logger.error("createCaptureResponse is nil")
+        //}
+    }
+    
+    func saveCaptureIdToFile() {
+        if(isReupload) { return }
+        guard let captureId = self.captureId else {
+            logger.error("saveCaptureIdToFile: captureId not found")
+            return
+        }
+        let filePath = self.captureDir.appendingPathComponent("captureId.txt")
+        do {
+            try captureId.write(to: filePath, atomically: true, encoding: .utf8)
+        } catch {
+            logger.error("saveCaptureIdToFile: Cannot write captureId to file")
+        }
+    }
+    
+    func saveCaptureTaskToFile() {
+        let filePath = self.captureDir.appendingPathComponent("captureTask.txt")
+        
+        do {
+            try captureTask.write(to: filePath, atomically: true, encoding:
+                    .utf8)
+        } catch {
+            logger.error("saveCaptureTaskToFile: Cannot write captureTask to file")
+        }
+    }
+
     
     // MARK: - backend API
     enum UploadState {
@@ -250,6 +291,13 @@ class UploadManager: ObservableObject {
         logger.info("POST: create capture")
         DispatchQueue.main.async {
             self.uploadState = .callingCreateCapture
+        }
+        guard !isReupload else {
+            logger.log("createCapture: captureId is already exist")
+            DispatchQueue.main.async {
+                self.uploadState = .doneCreateCapture
+            }
+            return
         }
         
         let url = URL(string: "\(backendUrl!)/capture")
@@ -334,7 +382,6 @@ class UploadManager: ObservableObject {
                                                           height: height)
         )
         
-        
         var request = URLRequest(url: url!)
         request.httpMethod = "PUT"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -380,6 +427,135 @@ class UploadManager: ObservableObject {
         task.resume()
     }
     
+    func createUploadImageRequest(url: URL, captureDatasIndex: Int, boundary: String) -> URLRequest? {
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        
+        let lineBreak =  "\r\n"
+        var body = Data()
+        
+        // append rgb image
+        let image_data = UIImage(data: captureDatas[captureDatasIndex].image!)!.pngData()
+        let mimeType = "image/png"
+        let image_name = CaptureInfo.photoIdString(for: captureDatas[captureDatasIndex].id!)
+        body.append("--\(boundary)\(lineBreak)")
+        body.append("Content-Disposition: form-data; name=\"picture\"; filename=\"\(image_name).png\"\(lineBreak)")
+        body.append("Content-Type: \(mimeType)\(lineBreak)\(lineBreak)")
+        if let data = image_data {
+            body.append(data)
+        }
+        body.append(lineBreak)
+        
+        // append depth image
+        let depth_data = UIImage(data: captureDatas[captureDatasIndex].depth!)!.pngData()
+        let depth_name = "\(CaptureInfo.photoIdString(for: captureDatas[captureDatasIndex].id!))_depth"
+        body.append("--\(boundary)\(lineBreak)")
+        body.append("Content-Disposition: form-data; name=\"picture\"; filename=\"\(depth_name).png\"\(lineBreak)")
+        body.append("Content-Type: \(mimeType)\(lineBreak)\(lineBreak)")
+        if let data = depth_data {
+            body.append(data)
+        }
+        body.append(lineBreak)
+
+        // append index
+        body.append("--\(boundary)\(lineBreak)")
+        body.append("Content-Disposition: form-data; name=\"index\"")
+        body.append("\(lineBreak)\(lineBreak)\(captureDatasIndex)\(lineBreak)")
+            
+        body.append("--\(boundary)--\(lineBreak)")
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        request.httpBody = body
+            
+        return request
+    }
+    func uploadOneImage(url: URL, index: Int) { // callUploadImageAPI
+        let request = createUploadImageRequest(url: url, captureDatasIndex: index, boundary: "Boundary-\(UUID().uuidString)")
+        guard let request = request else {
+            logger.error("uploadOneImage: invalid request with index \(index)")
+            return
+        }
+        
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                logger.error("Error: \(error.localizedDescription) with index \(index)")
+                return
+            }
+            
+            guard let data = data else {
+                logger.error("No data received with index \(index)")
+                return
+            }
+            
+            if let responseString = String(data: data, encoding: .utf8) {
+                logger.log("Response: \(responseString)")
+            }
+            
+            DispatchQueue.main.async {
+                self.uploadedImageNum += 1
+                print("\(self.uploadedImageNum) images has been uploaded and got resoponse")
+            }
+        }
+        task.resume()
+    }
+    func uploadImages() async {
+        logger.info("POST: upload images")
+        DispatchQueue.main.async {
+            self.uploadState = .callingUploadImage
+        }
+        guard let url = URL(string: "\(backendUrl!)/image/\(self.captureId!)") else { return }
+        
+        for (index, _) in captureDatas.enumerated() {
+            print("index: \(index)")
+            uploadOneImage(url: url, index: index)
+            while(uploadedImageNum <= index) {} /// this code makes sure backend get images in right index sequence, but lose efficiency severely...
+        }
+        while uploadedImageNum != captureDatas.count {}
+        DispatchQueue.main.async {
+            self.uploadState = .doneUploadImage
+        }
+    }
+    
+    func lockCapture() {
+        logger.info("PUT: lock capture")
+        DispatchQueue.main.async {
+            self.uploadState = .callingLockCapture
+        }
+        
+        guard let url = URL(string: "\(backendUrl!)/capture/lock/\(self.captureId!)") else { return }
+        struct emptyData: Encodable {}
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try! JSONEncoder().encode(emptyData())
+        
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                logger.error("Error: \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    self.uploadState = .doneLockCapture
+                }
+                return
+            }
+                    
+            guard let data = data else {
+                logger.error("No data received")
+                DispatchQueue.main.async {
+                    self.uploadState = .doneLockCapture
+                }
+                return
+            }
+            
+            if let responseString = String(data: data, encoding: .utf8) {
+                logger.log("lock capture response: \(responseString)")
+            }
+            DispatchQueue.main.async {
+                self.uploadState = .doneLockCapture
+            }
+        }
+        task.resume()
+    }
+    
     func loadCaptureData() async {
         DispatchQueue.main.async {
             self.uploadState = .loading
@@ -419,18 +595,33 @@ class UploadManager: ObservableObject {
         while uploadState != .doneCreateCapture {
             await Task.yield()
         }
+        saveCaptureIdToFile()
+        
+        // update capture
         if uploadState == .doneCreateCapture {
             logger.info("update capture, id = \(self.captureId), captureName = \(self.captureName)")
             await updateCapture(name: self.captureName)
         }
+        while uploadState != .doneUpdateCapture {
+            await Task.yield()
+        }
         
-//        while uploadState != .doneUpdateCapture {
-//            await Task.yield()
-//        }
-//        if uploadState == .doneUpdateCapture {
-//            await uploadImages()  // TODO: is reupload?
-//        }
-//
+        // upload image
+        if uploadState == .doneUpdateCapture {
+            if(!isReupload) {
+                await uploadImages()
+            }
+        }
+        while uploadState != .doneUploadImage {
+            await Task.yield()
+        }
+        lockCapture()
+        
+        if uploadState == .doneLockCapture {
+//            callCreateTaskAPI()
+//            saveCaptureTaskToFile()
+        }
+        
     }
 }
 

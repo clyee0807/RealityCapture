@@ -18,7 +18,6 @@ struct UploadView: View {
     @ObservedObject var uploadManager: UploadManager
     
     @State var isUploading: Bool = false
-    //@State var backToInitView: Bool = false
     
     @State var name: String = ""
     

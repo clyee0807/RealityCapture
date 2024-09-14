@@ -7,6 +7,7 @@ A custom view that displays the contents of a capture directory.
 import Combine
 import Foundation
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// This view displays the contents of a capture directory.
 struct CaptureGalleryView: View {
@@ -26,6 +27,19 @@ struct CaptureGalleryView: View {
     
     @State private var showUploadView = false
     
+    @State private var copied: Bool = false
+        
+    private enum Progress {
+        case waitingToGenerate
+        case genetating
+        case doneGenerate
+    }
+    private var progress: Progress = .doneGenerate
+    private var hasTask: Bool
+    var viewerLink: String = "https://www.google.com.tw/?hl=zh_TW"
+        
+
+    
     @StateObject private var uploadManager: UploadManager
     
     /// This property indicates whether the app is currently displaying the capture folder for the live session.
@@ -36,6 +50,7 @@ struct CaptureGalleryView: View {
                                        GridItem(.flexible()),
                                        GridItem(.flexible()) ]
     
+    let screenSize: CGRect = UIScreen.main.bounds
     let isCapturing: Bool
     let hasBeenUploaded: Bool
     
@@ -43,30 +58,28 @@ struct CaptureGalleryView: View {
     init(model: ARViewModel) {
         self.model = model
         self.captureFolderState = model.captureFolderState!
+        self.hasTask = false
         usingCurrentCaptureFolder = true
         isCapturing = true
         hasBeenUploaded = false
         
         self._uploadManager = StateObject(
-            wrappedValue: UploadManager(model: model,
-                                        captureDir: model.captureFolderState!.captureDir!,
-                                        captureInfos: model.captureFolderState!.captures)
+            wrappedValue: UploadManager(captureFolderState: model.captureFolderState!, isReupload: false)
         )
     }
     
     /// This initializer creates a capture gallery view for a previously created capture folder.
-    init(model: ARViewModel, observing captureFolderState: CaptureFolderState) {
+    init(model: ARViewModel, observing captureFolderState: CaptureFolderState, hasTask: Bool) {
         self.model = model
         self.captureFolderState = captureFolderState
+        self.hasTask = hasTask
         usingCurrentCaptureFolder = (model.captureFolderState?.captureDir?.lastPathComponent
                                         == captureFolderState.captureDir?.lastPathComponent)
         isCapturing = false
         hasBeenUploaded = false
         
         self._uploadManager = StateObject(
-            wrappedValue: UploadManager(model: model,
-                                        captureDir: captureFolderState.captureDir!,
-                                        captureInfos: captureFolderState.captures)
+            wrappedValue: UploadManager(captureFolderState: model.captureFolderState!, isReupload: true)
         )
     }
     
@@ -103,6 +116,65 @@ struct CaptureGalleryView: View {
             }
             .blur(radius: zoomedCapture != nil ? 20 : 0)
             
+            VStack {
+                Spacer()
+                if (hasTask) {
+                    if (progress == .waitingToGenerate) {
+                        Text("Waiting to generate...")
+                            .font(.title2)
+                            .padding(20)
+                            .frame(width: screenSize.width * 0.9)
+                            .background(
+                                Color(red: 0.5, green: 0.5, blue: 0.5, opacity: 0.5)
+                                    .cornerRadius(10)
+                            )
+                    } else if (progress == .genetating) {
+                        Text("Generating...")
+                            .font(.title2)
+                            .padding(20)
+                            .frame(width: screenSize.width * 0.9)
+                            .background(
+                                Color(red: 0.5, green: 0.5, blue: 0.5, opacity: 0.5)
+                                    .cornerRadius(10)
+                            )
+                    } else if (progress == .doneGenerate) {
+                        let copyButtonForegroundColor = copied ? Color.white : Color.black
+                        let copyButtonBackgroundColor = copied ? Color.black : Color.white
+                        VStack {
+                            HStack {
+                                Text("Generation is done!\ncheck with the link below")
+                                    .font(.title3)
+                                Spacer()
+                            }
+                            Spacer()
+                                .frame(height: 30)
+                            HStack {
+                                Text("\(viewerLink)")
+                                Spacer()
+                                Button(action: {
+                                    UIPasteboard.general.setValue(viewerLink, forPasteboardType: UTType.plainText.identifier)
+                                    self.copied = true
+                                }) {
+                                    Image(systemName: "doc.on.doc")
+                                        .padding(2)
+                                        .foregroundColor(copyButtonForegroundColor)
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .tint(copyButtonBackgroundColor)
+                            }
+                        }
+                        .padding(20)
+                        .frame(width: screenSize.width * 0.9)
+                        .background(
+                            Color(red: 0.5, green: 0.5, blue: 0.5, opacity: 0.5)
+                                .cornerRadius(10)
+                            )
+                    }
+                }
+                Spacer()
+                    .frame(height: 60)
+            }
+
             if zoomedCapture != nil {
                 ZStack(alignment: .top) {
                     // Add a transluscent layer over the blur to make the text pop.
@@ -304,26 +376,3 @@ struct FullSizeImageView: View {
         .transition(.opacity)
     }
 }
-
-//struct UploadIconButtonView: View {
-//    @Binding var showUploadView: Bool
-//    var body: some View{
-//        Button {
-//            print("Pressed Upload!")
-//            self.showUploadView = true
-//        } label: {
-//            Image(systemName: "square.and.arrow.up")
-//        }
-//    }
-//}
-
-
-//#if DEBUG
-//struct CaptureGalleryView_Previews: PreviewProvider {
-//    static var previews: some View {
-//        var datasetWriter = DatasetWriter()
-//        let model = ARViewModel(datasetWriter: datasetWriter)
-//        CaptureGalleryView(model: model)
-//    }
-//}
-//#endif // DEBUG

@@ -279,7 +279,14 @@ class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
         case .capturing1:
             print("Set ModelState to capturing")
             
-            if let entity = originAnchor?.children.first(where: { $0.name == "CaptureTrack"}) {
+            if let boundingBox = originAnchor?.children.first(where: { $0.name == "BoundingBox" }) {
+                print("BoundingBox found, removing all children")
+                boundingBox.children.removeAll() // 移除 BoundingBox 底下的所有 children
+            } else {
+                print("BoundingBox not found")
+            }
+            
+            if (originAnchor?.children.first(where: { $0.name == "CaptureTrack"})) != nil {
                 print("captureTrack is existed")
             } else {
                 print("Create captureTrack")
@@ -312,7 +319,7 @@ class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
         print("update origin anchor in viewModel: \(originAnchor.position)")
     }
     
-    private func removeAllChildren(of entity: Entity) {
+    func removeAllChildren(of entity: Entity) {
         for child in entity.children {
             print("removing: \(child.name)")
             removeAllChildren(of: child)

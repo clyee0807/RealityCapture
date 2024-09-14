@@ -70,12 +70,28 @@ struct CaptureFolderItem: View {
     @StateObject private var ownedCaptureFolderState: CaptureFolderState
     var isFromButton: Bool
     @Environment(\.presentationMode) private var presentation
+    @State var hasTask: Bool = false
+        @State var captureTask: String = "" {
+            didSet {
+                if(captureTask == "") {
+                    self.hasTask = false
+                } else {
+                    self.hasTask = true
+                }
+            }
+        }
+    
+//    private var publisher: AnyPublisher<String, Never> {
+//        CaptureFolderState.getCaptureTaskFromFile(captureDir: ownedCaptureFolderState.captureDir!)
+//            .receive(on: DispatchQueue.main)
+//            .replaceError(with: "")
+//            .eraseToAnyPublisher()
+//    }
     
     init(model: ARViewModel, url: URL, isFromButton: Bool) {
         self.model = model
         self._ownedCaptureFolderState = StateObject(wrappedValue: CaptureFolderState(url: url))
         self.isFromButton = isFromButton
-//        print("init captureFolderItem, url = \(url)")
     }
     
     var body: some View {
@@ -89,7 +105,7 @@ struct CaptureFolderItem: View {
             }
         } else {
             NavigationLink(destination: CaptureGalleryView(model: model,
-                                                           observing: ownedCaptureFolderState)) {
+                                                           observing: ownedCaptureFolderState, hasTask: hasTask)) {
                 folderContent
             }
         }
@@ -111,20 +127,22 @@ struct CaptureFolderItem: View {
                 }
                 VStack(alignment: .leading) {
                     Text(ownedCaptureFolderState.captureDir!.lastPathComponent)
-                    Text("\(ownedCaptureFolderState.captures.count) images")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    HStack {
+                        Text("\(ownedCaptureFolderState.captures.count) images")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Spacer()
+//                        Text("\(captureTask)")
+//                            .foregroundColor(.green)
+//                            .onReceive(publisher, perform: { task in
+//                                if(task == "None") {
+//                                    self.captureTask = ""
+//                                } else {
+//                                    self.captureTask = task
+//                                }
+//                            })
+                    }
                 }
             }
         }
 }
-
-//#if DEBUG
-//struct CaptureFoldersView_Previews: PreviewProvider {
-//    static var previews: some View {
-//        var datasetWriter = DatasetWriter()
-//        let model = ARViewModel(datasetWriter: datasetWriter)
-//        CaptureFoldersView(model: model, isFromButton: false)
-//    }
-//}
-//#endif // DEBUG

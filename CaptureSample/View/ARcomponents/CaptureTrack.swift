@@ -24,8 +24,8 @@ class CaptureTrack: Entity, HasAnchoring {
     var points: [ModelEntity] = []
 //    var checkpoints: [Int: PointStatus] = [:]
 
-    var count: Int = 20
-    var radius: Float = 0.2
+    var count: Int = 30
+    var radius: Float = 0.41  // TODO: 要根據 hemisphere 改變
 
     private var cancellable: AnyCancellable?
     private var cancellables = Set<AnyCancellable>()
@@ -45,7 +45,7 @@ class CaptureTrack: Entity, HasAnchoring {
         discEntity.position = anchorPosition + SIMD3<Float>(0, 0.01, 0)
         
         asyncLoadModelEntity();  // load hemiSphere.usdz
-        createCheckPoints(center: anchorPosition, count: 20)
+        createCheckPoints(center: anchorPosition, count: count)
 
     }
     
@@ -54,7 +54,6 @@ class CaptureTrack: Entity, HasAnchoring {
     }
     
     public func findNearestPoint(cameraPosition: SIMD3<Float>, anchorPosition: SIMD3<Float>) -> Int {
-        
         let interval = 360.0 / Float(count)
         
         // translate to relative position
@@ -81,7 +80,7 @@ class CaptureTrack: Entity, HasAnchoring {
                     color = (isPointed ? .yellow : .red)
                 }
                 
-                let material = SimpleMaterial(color: color, isMetallic: false)
+                let material = SimpleMaterial(color: color.withAlphaComponent(0.7), isMetallic: false)
                 (entity as? ModelEntity)?.model?.materials = [material]
                 
                 if status != .captured {
@@ -108,7 +107,7 @@ class CaptureTrack: Entity, HasAnchoring {
                 modelEntity.model?.materials = [material]
 
                 modelEntity.position = self.anchorPosition + SIMD3<Float>(0, 0.001, 0)
-                modelEntity.scale = SIMD3<Float>(0.02, 0.02, 0.02)
+                modelEntity.scale = SIMD3<Float>(0.04, 0.04, 0.04)  // TODO: 要根據模型大小改變
                 modelEntity.name = filename
                 self.addChild(modelEntity)
                 print("Children of captureTrack: \(self.children.map { $0.name })")
@@ -127,7 +126,7 @@ class CaptureTrack: Entity, HasAnchoring {
             }, receiveValue: { modelEntity in
                 
                 var material = SimpleMaterial()
-                material.color = .init(tint: .red.withAlphaComponent(0.3))
+                material.color = .init(tint: .red.withAlphaComponent(0.7))
                 modelEntity.model?.materials = [material]
 
                 modelEntity.position = position
@@ -136,7 +135,7 @@ class CaptureTrack: Entity, HasAnchoring {
                 let rotation = simd_quatf(from: up, to: normalize(direction))
                 modelEntity.orientation = rotation
                 
-                modelEntity.scale = SIMD3<Float>(0.02, 0.02, 0.02)
+                modelEntity.scale = SIMD3<Float>(0.025, 0.025, 0.025)
                 modelEntity.name = name
                 self.points.append(modelEntity)
                 self.addChild(modelEntity)
@@ -147,6 +146,7 @@ class CaptureTrack: Entity, HasAnchoring {
     
     private func createCheckPoints(center: SIMD3<Float>, count: Int) {
         self.count = count
+        let height: Float = 0.035  // 這圈拍攝的高度
         
         let fullCircle = Float.pi * 2
         let angleIncrement = fullCircle / Float(count)
@@ -156,7 +156,7 @@ class CaptureTrack: Entity, HasAnchoring {
             
             let x = cos(angle) * radius
             let z = sin(angle) * radius
-            let entityPosition = SIMD3<Float>(center.x + x, center.y, center.z + z)
+            let entityPosition = SIMD3<Float>(center.x + x, center.y + height, center.z + z)
             
             let direction = center - entityPosition  // 面向 center 的方向
             let name = "Point\(i)"
