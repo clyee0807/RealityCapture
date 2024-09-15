@@ -71,22 +71,22 @@ struct CaptureFolderItem: View {
     var isFromButton: Bool
     @Environment(\.presentationMode) private var presentation
     @State var hasTask: Bool = false
-        @State var captureTask: String = "" {
-            didSet {
-                if(captureTask == "") {
-                    self.hasTask = false
-                } else {
-                    self.hasTask = true
-                }
+    @State var captureTask: String = "" {
+        didSet {
+            if(captureTask == "") {
+                self.hasTask = false
+            } else {
+                self.hasTask = true
             }
         }
+    }
     
-//    private var publisher: AnyPublisher<String, Never> {
-//        CaptureFolderState.getCaptureTaskFromFile(captureDir: ownedCaptureFolderState.captureDir!)
-//            .receive(on: DispatchQueue.main)
-//            .replaceError(with: "")
-//            .eraseToAnyPublisher()
-//    }
+    private var publisher: AnyPublisher<String, Never> {
+        CaptureFolderState.getCaptureTaskFromDisk(captureDir: ownedCaptureFolderState.captureDir!)
+            .receive(on: DispatchQueue.main)
+            .replaceError(with: "")
+            .eraseToAnyPublisher()
+    }
     
     init(model: ARViewModel, url: URL, isFromButton: Bool) {
         self.model = model
@@ -132,15 +132,15 @@ struct CaptureFolderItem: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                         Spacer()
-//                        Text("\(captureTask)")
-//                            .foregroundColor(.green)
-//                            .onReceive(publisher, perform: { task in
-//                                if(task == "None") {
-//                                    self.captureTask = ""
-//                                } else {
-//                                    self.captureTask = task
-//                                }
-//                            })
+                        Text("\(captureTask)")
+                            .foregroundColor(.green)
+                            .onReceive(publisher, perform: { task in
+                                if(task == "None") {
+                                    self.captureTask = ""
+                                } else {
+                                    self.captureTask = task
+                                }
+                            })
                     }
                 }
             }

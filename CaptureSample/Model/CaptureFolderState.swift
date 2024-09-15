@@ -192,6 +192,18 @@ class CaptureFolderState: ObservableObject {
         return future
     }
     
+    static func getCaptureTaskFromDisk(captureDir: URL) -> Future<String, Never> {
+        let future = Future<String, Never> { promise in
+            let filePath = captureDir.appendingPathComponent("captureTask.txt")
+            guard let captureTask = try? String(contentsOf: filePath, encoding: .utf8) else {
+                promise(.success(""))
+                return
+            }
+            promise(.success(captureTask))
+        }
+        return future
+    }
+    
     private static func creationDate(for url: URL) -> Date {
         let date = try? url.resourceValues(forKeys: [.creationDateKey]).creationDate
         

@@ -41,7 +41,7 @@ struct UploadView: View {
             .padding(.horizontal, 20.0)
             
             if(isUploading) {
-                isUploadingView(model: model)
+                isUploadingView(model: model, uploadManager: uploadManager)
             }
         }
         .navigationBarHidden(isUploading)
@@ -186,51 +186,119 @@ struct UploadIconButtonView: View {
 
 struct isUploadingView: View {
     @ObservedObject var model: ARViewModel
+    @ObservedObject var uploadManager: UploadManager
     @State var backToInitView: Bool = false
     
-    init(model: ARViewModel){
+    var createCaptureFolderPhase: Bool {
+        return (
+            uploadManager.uploadState == .doneLoad ||
+            uploadManager.uploadState == .callingCreateCapture ||
+            uploadManager.uploadState == .doneCreateCapture ||
+            uploadManager.uploadState == .callingUpdateCapture ||
+            uploadManager.uploadState == .doneUpdateCapture
+        )
+    }
+    var uploadImagePhase: Bool {
+        return (
+            uploadManager.uploadState == .callingUploadImage ||
+            uploadManager.uploadState == .doneUploadImage
+        )
+    }
+    var createTaskPhase: Bool {
+        return (
+            uploadManager.uploadState == .callingLockCapture ||
+            uploadManager.uploadState == .doneLockCapture ||
+            uploadManager.uploadState == .callingCreateTask
+        )
+    }
+    var allDonePhase: Bool {
+        return (
+            uploadManager.uploadState == .doneCreateTask
+        )
+    }
+
+    init(model: ARViewModel, uploadManager: UploadManager){
         self.model = model
+        self.uploadManager = uploadManager
     }
     
     var body: some View {
         ZStack{
             Color(red: 0.5, green: 0.5, blue: 0.5, opacity: 0.8)
                 .edgesIgnoringSafeArea(.all)
-            if(model.isUploading) {
-                Text("Uploading ...")
-                    .foregroundColor(.white)
-                    .font(.largeTitle)
-            }
-            else {
-                VStack{
-                    HStack{
-                        Text("Done Uploading")
-                            .foregroundColor(.white)
-                            .font(.title)
-                        Image(systemName: "smiley")
-                            .foregroundColor(.white)
-                            .font(/*@START_MENU_TOKEN@*/.title/*@END_MENU_TOKEN@*/)
-                    }
-                    Spacer()
-                        .frame(height: 60)
-                    Button(action: {
-                        backToInitView = true
-                    }, label: {
-                        Text("Back to main page")
-                            .padding(.horizontal, 20.0)
-                            .padding(.vertical, 10.0)
-                            .font(.title)
-                    })
-                    .buttonStyle(.borderedProminent)
-                    .tint(.blue)
+            VStack{
+                if (!allDonePhase) {
+                    ProgressView()
                 }
+                if (createCaptureFolderPhase) {
+                    Text("create the capture folder on backend...")
+                        .foregroundColor(.white)
+                        .font(.title2)
+                }
+                if (uploadImagePhase) {
+                    VStack {
+                        Text("upload images...")
+                            .foregroundColor(.white)
+                            .font(.largeTitle)
+                        Spacer()
+                            .frame(height: 60)
+                        UploadProgressBarView(uploadManager: uploadManager)
+                    }
+                }
+                if (createTaskPhase) {
+                    Text("create task on backend...")
+                        .foregroundColor(.white)
+                        .font(.title2)
+                }
+                if (allDonePhase) {
+                    VStack{
+                        HStack{
+                            Text("Done Uploading")
+                                .foregroundColor(.white)
+                                .font(.title)
+                            Image(systemName: "smiley")
+                                .foregroundColor(.white)
+                                .font(/*@START_MENU_TOKEN@*/.title/*@END_MENU_TOKEN@*/)
+                        }
+                        Spacer()
+                            .frame(height: 60)
+                        Button(action: {
+                            backToInitView = true
+                        }, label: {
+                            Text("Back to main page")
+                                .padding(.horizontal, 20.0)
+                                .padding(.vertical, 10.0)
+                                .font(.title)
+                        })
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+                        NavigationLink(destination: InitView(model: model),
+                                       isActive: self.$backToInitView) {
+                            EmptyView()
+                        }
+                                       .frame(width: 0, height: 0)
+                                       .disabled(true)
+                    }
+                }
+                //Text("\(uploadManager.uploadState)")
             }
-            NavigationLink(destination: InitView(model: model),
-                            isActive: self.$backToInitView) {
-                EmptyView()
-            }
-                            .frame(width: 0, height: 0)
-                            .disabled(true)
+        }
+    }
+}
+
+struct UploadProgressBarView: View {
+    @ObservedObject var uploadManager: UploadManager
+    
+    init(uploadManager: UploadManager){
+        self.uploadManager = uploadManager
+    }
+    
+    var body: some View {
+        VStack {
+            ProgressView(value: Double(uploadManager.uploadedImageNum) / Double(uploadManager.captureDatas.count))
+                .padding(20)
+                .frame(height: 40)
+                .scaleEffect(x: 1, y: 3, anchor: .center)
         }
     }
 }

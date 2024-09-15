@@ -77,7 +77,8 @@ class UploadManager: ObservableObject {
 //    @ObservedObject var model: ARViewModel
     
     // http url information
-    private let localHostBaseUrl: URL? = URL(string: "http://172.20.10.6:3001") ?? nil  // windows
+//    private let localHostBaseUrl: URL? = URL(string: "http://172.20.10.6:3001") ?? nil
+    private let localHostBaseUrl: URL? = URL(string: "http://192.168.0.14:3001") ?? nil
     
     private let backendBaseURL: URL? = nil
     private let isTesting: Bool = true
@@ -165,7 +166,7 @@ class UploadManager: ObservableObject {
         return loadedCapture
     }
     
-    private func loadMetadatafromDisk() -> Metadata? {
+    private func loadMetadatafromDisk() -> Metadata? {  // getCameraSettingFromDisk()
         let file_path = CaptureInfo.metadataUrl(in: captureDir)
         logger.info("load Metadata from \(file_path)")
         
@@ -391,7 +392,7 @@ class UploadManager: ObservableObject {
             if let error = error {
                 logger.error("Error: \(error.localizedDescription)")
                 DispatchQueue.main.async {
-                    self.uploadState = .doneUpdateCapture
+                    self.uploadState = .failed
                 }
                 return
             }
@@ -399,13 +400,13 @@ class UploadManager: ObservableObject {
             guard let data = data else {
                 logger.error("No data received")
                 DispatchQueue.main.async {
-                    self.uploadState = .doneUpdateCapture
+                    self.uploadState = .failed
                 }
                 return
             }
             
             if let responseString = String(data: data, encoding: .utf8) {
-                print("Response: \(responseString)")
+                print("Update capture response: \(responseString)")
             }
 //            self.updateCaptureResponse = data
             DispatchQueue.main.async {
@@ -487,7 +488,7 @@ class UploadManager: ObservableObject {
             }
             
             if let responseString = String(data: data, encoding: .utf8) {
-                logger.log("Response: \(responseString)")
+                logger.log("Upload one image response: \(responseString)")
             }
             
             DispatchQueue.main.async {
@@ -507,14 +508,20 @@ class UploadManager: ObservableObject {
         for (index, _) in captureDatas.enumerated() {
             print("index: \(index)")
             uploadOneImage(url: url, index: index)
-            while(uploadedImageNum <= index) {} /// this code makes sure backend get images in right index sequence, but lose efficiency severely...
+            while(uploadedImageNum <= index) {
+                await Task.yield()
+            } /// this code makes sure backend get images in right index sequence, but lose efficiency severely...
         }
-        while uploadedImageNum != captureDatas.count {}
+        while uploadedImageNum != captureDatas.count {
+            await Task.yield()
+        }
+        
         DispatchQueue.main.async {
             self.uploadState = .doneUploadImage
         }
     }
     
+    // lock & unlock capture
     func lockCapture() {
         logger.info("PUT: lock capture")
         DispatchQueue.main.async {
@@ -533,7 +540,7 @@ class UploadManager: ObservableObject {
             if let error = error {
                 logger.error("Error: \(error.localizedDescription)")
                 DispatchQueue.main.async {
-                    self.uploadState = .doneLockCapture
+                    self.uploadState = .failed
                 }
                 return
             }
@@ -541,7 +548,7 @@ class UploadManager: ObservableObject {
             guard let data = data else {
                 logger.error("No data received")
                 DispatchQueue.main.async {
-                    self.uploadState = .doneLockCapture
+                    self.uploadState = .failed
                 }
                 return
             }
@@ -556,21 +563,103 @@ class UploadManager: ObservableObject {
         task.resume()
     }
     
+    func unlockCapture() {
+        logger.info("PUT: unlock capture")
+        DispatchQueue.main.async {
+            self.uploadState = .callingLockCapture
+        }
+        guard let url = URL(string: "\(backendUrl!)/capture/unlock/\(self.captureId!)") else { return }
+        struct emptyData: Encodable {}
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try! JSONEncoder().encode(emptyData())
+        
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                logger.error("Error: \(error.localizedDescription)")
+                return
+            }
+            
+            guard let data = data else {
+                logger.error("No data received")
+                return
+            }
+            
+            if let responseString = String(data: data, encoding: .utf8) {
+                logger.log("unlock capture response: \(responseString)")
+            }
+        }
+        task.resume()
+    }
+    
+    // Create task
+    struct CreateTaskTypeRequest: Encodable {
+        init(type: String) {
+            self.type = type
+        }
+        let type: String
+    }
+    func createTask() async{
+        logger.info("POST: create Task \(self.captureTask)")
+        DispatchQueue.main.async {
+            self.uploadState = .callingCreateTask
+        }
+        
+        guard let url = URL(string: "\(backendUrl!)/task/\(self.captureId!)") else { return }
+        let taskRequest = CreateTaskTypeRequest(
+            type: captureTask
+        )
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try! JSONEncoder().encode(taskRequest)
+
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                logger.error("Error: \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    self.uploadState = .failed
+                }
+                return
+            }
+                    
+            guard let data = data else {
+                logger.error("No data received")
+                DispatchQueue.main.async {
+                    self.uploadState = .failed
+                }
+                return
+            }
+            
+            if let responseString = String(data: data, encoding: .utf8) {
+                print("Create task response: \(responseString)")
+            }
+            DispatchQueue.main.async {
+                self.uploadState = .doneCreateTask
+            }
+        }
+        task.resume()
+    }
+    
     func loadCaptureData() async {
         DispatchQueue.main.async {
             self.uploadState = .loading
         }
-//        if !captureDatas.isEmpty {
-//            logger.log("imageData of current folder is not empty.")
-//            DispatchQueue.main.async {
-//                self.captureDatas.removeAll()
-//            }
-//        }
+        
+        if !captureDatas.isEmpty {
+            logger.log("imageData of current folder is not empty.")
+            DispatchQueue.main.async {
+                self.captureDatas.removeAll()
+            }
+        }
         
         await withTaskGroup(of: perCapture.self, body: { loadTaskGroup in
             for captureInfo in self.captureInfos {
                 loadTaskGroup.addTask {
-                    return await self.loadCaptureData(captureId: captureInfo.id)
+                    return self.loadCaptureData(captureId: captureInfo.id)
                 }
             }
             
@@ -584,11 +673,23 @@ class UploadManager: ObservableObject {
             }
         })
         
+       
+        // metadata = try loadMetadatafromDisk()
+        guard let metadata = loadMetadatafromDisk() else {
+            logger.error("Failed to load metadata from metadata.json")
+            DispatchQueue.main.async {
+                self.uploadState = .failed
+            }
+            return
+        }
+        
         DispatchQueue.main.async {
             self.uploadState = .doneLoad
         }
     }
     
+    
+    // trigger by upload button
     func upload() async {
         await createCapture()
         
@@ -615,11 +716,17 @@ class UploadManager: ObservableObject {
         while uploadState != .doneUploadImage {
             await Task.yield()
         }
-        lockCapture()
         
+        // lock capture
+        lockCapture()
+        while uploadState != .doneLockCapture {
+            await Task.yield()
+        }
+        
+        // create task
         if uploadState == .doneLockCapture {
-//            callCreateTaskAPI()
-//            saveCaptureTaskToFile()
+            await createTask()
+            saveCaptureTaskToFile()
         }
         
     }

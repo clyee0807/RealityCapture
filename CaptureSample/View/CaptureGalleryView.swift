@@ -78,8 +78,9 @@ struct CaptureGalleryView: View {
         isCapturing = false
         hasBeenUploaded = false
         
+        let isReupload: Bool = FileManager.default.fileExists(atPath: captureFolderState.captureDir!.appendingPathComponent("captureId.txt").path)
         self._uploadManager = StateObject(
-            wrappedValue: UploadManager(captureFolderState: model.captureFolderState!, isReupload: true)
+            wrappedValue: UploadManager(captureFolderState: captureFolderState, isReupload: isReupload)
         )
     }
     
