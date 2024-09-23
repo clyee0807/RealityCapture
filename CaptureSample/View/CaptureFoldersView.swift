@@ -65,28 +65,60 @@ struct CaptureFoldersView: View {
 struct CaptureFolderItem: View {
     private let thumbnailWidth: CGFloat = 50
     private let thumbnailHeight: CGFloat = 50
+    let dummyUploadInfo: [String: Any] = [
+        "captureID": "",
+        "name": "Not Uploaded Yet",
+        "task": "None"
+    ]
     
     @ObservedObject private var model: ARViewModel
     @StateObject private var ownedCaptureFolderState: CaptureFolderState
     var isFromButton: Bool
     @Environment(\.presentationMode) private var presentation
     @State var hasTask: Bool = false
-    @State var captureTask: String = "" {
+//    @State var captureTask: String = "" {
+//        didSet {
+//            if(captureTask == "") {
+//                self.hasTask = false
+//            } else {
+//                self.hasTask = true
+//            }
+//        }
+//    }
+    @State var captureNameForegroundColor = Color.gray
+    @State var uploadInfo: [String: Any] = [
+        "captureID": "",
+        "name": "Not Uploaded Yet",
+        "task": "None"
+    ] {
         didSet {
-            if(captureTask == "") {
-                self.hasTask = false
-            } else {
+            if let task = uploadInfo["task"] as? String, task != "None" {
                 self.hasTask = true
+            } else {
+                self.hasTask = false
+            }
+            
+            if let name = uploadInfo["name"] as? String, name != "Not Uploaded Yet" {
+                self.captureNameForegroundColor = Color.white
+            } else {
+                self.captureNameForegroundColor = Color.gray
             }
         }
     }
     
-    private var publisher: AnyPublisher<String, Never> {
+    private var taskPublisher: AnyPublisher<String, Never> {
         CaptureFolderState.getCaptureTaskFromDisk(captureDir: ownedCaptureFolderState.captureDir!)
             .receive(on: DispatchQueue.main)
             .replaceError(with: "")
             .eraseToAnyPublisher()
     }
+    private var uploadInfoPublisher: AnyPublisher<[String: Any], Never> {
+        CaptureFolderState.getUploadInfoFromFile(captureDir: ownedCaptureFolderState.captureDir!)
+            .receive(on: DispatchQueue.main)
+            .replaceError(with: dummyUploadInfo)
+            .eraseToAnyPublisher()
+    }
+    
     
     init(model: ARViewModel, url: URL, isFromButton: Bool) {
         self.model = model
@@ -126,23 +158,29 @@ struct CaptureFolderItem: View {
                         .foregroundColor(.secondary)
                 }
                 VStack(alignment: .leading) {
-                    Text(ownedCaptureFolderState.captureDir!.lastPathComponent)
+//                    Text(ownedCaptureFolderState.captureDir!.lastPathComponent)
+                    Text("\(uploadInfo["name"] as? String ?? "")")
+                        .foregroundColor(self.captureNameForegroundColor)
                     HStack {
                         Text("\(ownedCaptureFolderState.captures.count) images")
                             .font(.caption)
                             .foregroundColor(.secondary)
                         Spacer()
-                        Text("\(captureTask)")
-                            .foregroundColor(.green)
-                            .onReceive(publisher, perform: { task in
-                                if(task == "None") {
-                                    self.captureTask = ""
-                                } else {
-                                    self.captureTask = task
-                                }
-                            })
+                        if (self.hasTask){
+                            Image(systemName: "cube.transparent")
+                        }
                     }
+//                    .onReceive(publisher, perform: { task in
+//                        if (task == "None") {
+//                            self.captureTask = ""
+//                        } else {
+//                            self.captureTask = task
+//                        }
+//                    })
                 }
             }
+            .onReceive(uploadInfoPublisher, perform: { uploadInfo in
+                self.uploadInfo = uploadInfo
+            })
         }
 }

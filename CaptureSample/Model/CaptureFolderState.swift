@@ -204,6 +204,28 @@ class CaptureFolderState: ObservableObject {
         return future
     }
     
+    static func getUploadInfoFromFile(captureDir: URL) -> Future<[String: Any], Never>  {
+        let future = Future<[String: Any], Never> { promise in
+            let filePath = captureDir.appendingPathComponent("uploadInfo.txt")
+            let dummyUploadInfo: [String: Any] = [
+                "captureID": "",
+                "name": "Not Uploaded Yet",
+                "task": "None"
+            ]
+            guard let data = try? Data(contentsOf: filePath) else {
+                promise(.success(dummyUploadInfo))
+                return
+            }
+            guard let uploadInfo =
+                    try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
+                promise(.success(dummyUploadInfo))
+                return
+            }
+            promise(.success(uploadInfo))
+        }
+        return future
+    }
+    
     private static func creationDate(for url: URL) -> Date {
         let date = try? url.resourceValues(forKeys: [.creationDateKey]).creationDate
         

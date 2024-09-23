@@ -51,6 +51,7 @@ struct CaptureGalleryView: View {
                                        GridItem(.flexible()) ]
     
     let screenSize: CGRect = UIScreen.main.bounds
+    
     let isCapturing: Bool
     let hasBeenUploaded: Bool
     
@@ -76,9 +77,10 @@ struct CaptureGalleryView: View {
         usingCurrentCaptureFolder = (model.captureFolderState?.captureDir?.lastPathComponent
                                         == captureFolderState.captureDir?.lastPathComponent)
         isCapturing = false
-        hasBeenUploaded = false
         
-        let isReupload: Bool = FileManager.default.fileExists(atPath: captureFolderState.captureDir!.appendingPathComponent("captureId.txt").path)
+        hasBeenUploaded =  FileManager.default.fileExists(atPath: captureFolderState.captureDir!.appendingPathComponent("captureId.txt").path)
+        let isReupload: Bool = hasBeenUploaded
+        
         self._uploadManager = StateObject(
             wrappedValue: UploadManager(captureFolderState: captureFolderState, isReupload: isReupload)
         )
@@ -96,12 +98,14 @@ struct CaptureGalleryView: View {
             .frame(width: 0, height: 0)
             .disabled(true)
             
-            NavigationLink(destination: UploadView(model: model, uploadManager: uploadManager),
-                            isActive: self.$showUploadView) {
-                EmptyView()
+            if (!hasBeenUploaded) {
+                NavigationLink(destination: UploadView(model: model, uploadManager: uploadManager),
+                                isActive: self.$showUploadView) {
+                    EmptyView()
+                }
+                .frame(width: 0, height: 0)
+                .disabled(true)
             }
-                            .frame(width: 0, height: 0)
-                            .disabled(true)
             
             GeometryReader { geometryReader in
                 ScrollView() {
@@ -206,7 +210,9 @@ struct CaptureGalleryView: View {
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarItems(trailing: HStack {
             Spacer()
-            UploadIconButtonView(uploadManager: self.uploadManager, showUploadView: self.$showUploadView)
+            if (!captureFolderState.captures.isEmpty && !hasBeenUploaded) {
+                UploadIconButtonView(uploadManager: self.uploadManager, showUploadView: self.$showUploadView)
+            }
         })
     }
 }

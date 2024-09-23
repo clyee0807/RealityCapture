@@ -71,6 +71,17 @@ class Coordinator: NSObject {
             }
             else {
                 print("boundingBox already exists and tap")
+                print("boundingBox.position: \(String(describing: boundingBox?.position))")
+                
+                guard let boundingBox = self.boundingBox as? BlackMirrorzBoundingBox else { return }
+                if let heightEditorPosition = boundingBox.heightEditor?.position {
+                    print("heightEditor.position: \(heightEditorPosition)")
+                }
+                if let widthEditorPosition = boundingBox.widthEditor?.position {
+                    print("widthEditor.position: \(widthEditorPosition)")
+                }
+                
+                
                 let hitTestResults = arView.hitTest(location, query: .nearest, mask: .all)
                 hitEntity = hitTestResults.first?.entity
                 if let entity = hitEntity {
@@ -93,9 +104,6 @@ class Coordinator: NSObject {
                 print("In Pan Gesture Began state, originAnchor.position: \(originAnchor.position)")
                 let hitTestResults = arView.hitTest(location, query: .nearest, mask: .all)
                 hitEntity = hitTestResults.first?.entity
-//                if let entity = hitEntity {
-//                    print("hitEntity: \(entity.name)")
-//                }
                 initialX = location.x
                 initialY = location.y
                 
@@ -152,13 +160,18 @@ class Coordinator: NSObject {
             var newPosition = boundingBox.heightEditor?.position
             newPosition?.y -= worldDeltaY
             boundingBox.heightEditor?.position = newPosition!
+
             updateLineEntityByHeightEditor(deltaY: -worldDeltaY)
+            
         }
     }
     
     func updateLineEntityByHeightEditor(deltaY: Float) {
         guard let originAnchor = parent.viewModel.originAnchor else { return }
+        guard let boundingBox = self.boundingBox as? BlackMirrorzBoundingBox else { return }
         
+        var deltaHeight: Float = 0.0
+
         let movingLines = ["line1", "line8", "line9", "line10"]
         let extendingLines = ["line3", "line4", "line11", "line12"]
         
@@ -187,7 +200,18 @@ class Coordinator: NSObject {
                 let newModelComponent = ModelComponent(mesh: newLine, materials: [SimpleMaterial(color: .white, isMetallic: false)])
                 line.components.set(newModelComponent)
                 line.position = SIMD3<Float>(oldPosition.x, newPosition, oldPosition.z)
+                
+                deltaHeight = newLength - oldLength
             }
+        }
+        
+        // 更新 editor 至中間位置
+        if let widthEditor = boundingBox.widthEditor {
+            print("deltaHeight: \(deltaHeight)")
+            widthEditor.position.y = widthEditor.position.y + (deltaHeight / 2)
+        }
+        if let depthEditor = boundingBox.depthEditor {
+            depthEditor.position.y = depthEditor.position.y + (deltaHeight / 2)
         }
     }
     
@@ -209,6 +233,9 @@ class Coordinator: NSObject {
     
     func updateLineEntityByWidthEditor(delta: Float) {
         guard let originAnchor = parent.viewModel.originAnchor else { return }
+        guard let boundingBox = self.boundingBox as? BlackMirrorzBoundingBox else { return }
+
+        var deltaWidth: Float = 0.0
         
         let movingLines = ["line1", "line2", "line3", "line4"]
         let extendingLines = ["line5", "line6", "line8", "line9"]
@@ -238,7 +265,18 @@ class Coordinator: NSObject {
                 let newModelComponent = ModelComponent(mesh: newLine, materials: [SimpleMaterial(color: .white, isMetallic: false)])
                 line.components.set(newModelComponent)
                 line.position = SIMD3<Float>(oldPosition.x, oldPosition.y, newPosition)
+                
+                deltaWidth = newLength - oldLength
             }
+        }
+        
+        // 更新 editor 至中間位置
+        if let heightEditor = boundingBox.heightEditor {
+            print("deltaWidth: \(deltaWidth)")
+            heightEditor.position.z = heightEditor.position.z + (deltaWidth / 2)
+        }
+        if let depthEditor = boundingBox.depthEditor {
+            depthEditor.position.z = depthEditor.position.z + (deltaWidth / 2)
         }
     }
     
@@ -254,12 +292,16 @@ class Coordinator: NSObject {
             var newPosition = boundingBox.depthEditor?.position
             newPosition?.x += worldDeltaX
             boundingBox.depthEditor?.position = newPosition!
+            
             updateLineEntityByDepthEditor(delta: worldDeltaX)
         }
     }
     
     func updateLineEntityByDepthEditor(delta: Float) {
         guard let originAnchor = parent.viewModel.originAnchor else { return }
+        guard let boundingBox = self.boundingBox as? BlackMirrorzBoundingBox else { return }
+
+        var deltaDepth: Float = 0.0
         
         let movingLines = ["line4", "line6", "line9", "line12"]
         let extendingLines = ["line1", "line2", "line7", "line10"]
@@ -289,7 +331,19 @@ class Coordinator: NSObject {
                 let newModelComponent = ModelComponent(mesh: newLine, materials: [SimpleMaterial(color: .white, isMetallic: false)])
                 line.components.set(newModelComponent)
                 line.position = SIMD3<Float>(newPosition, oldPosition.y, oldPosition.z)
+                
+                deltaDepth = newLength - oldLength
             }
         }
+        
+        // 更新 editor 至中間位置
+        if let heightEditor = boundingBox.heightEditor {
+            print("deltaDepth: \(deltaDepth)")
+            heightEditor.position.x = heightEditor.position.x + (deltaDepth / 2)
+        }
+        if let widthEditor = boundingBox.widthEditor {
+            widthEditor.position.x = widthEditor.position.x + (deltaDepth / 2)
+        }
     }
+    
 }

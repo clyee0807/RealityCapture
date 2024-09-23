@@ -77,8 +77,7 @@ class UploadManager: ObservableObject {
 //    @ObservedObject var model: ARViewModel
     
     // http url information
-//    private let localHostBaseUrl: URL? = URL(string: "http://172.20.10.6:3001") ?? nil
-    private let localHostBaseUrl: URL? = URL(string: "http://192.168.0.14:3001") ?? nil
+    private let localHostBaseUrl: URL? = URL(string: "http://172.20.10.6:3001") ?? nil
     
     private let backendBaseURL: URL? = nil
     private let isTesting: Bool = true
@@ -117,7 +116,16 @@ class UploadManager: ObservableObject {
     private var isReupload: Bool
     
     @Published var captureName: String = ""
-    @Published var captureTask: String = "COLMAP"
+    @Published var captureTask: String = "None"
+    @Published var shouldCreateTask: Bool = false {
+        didSet {
+            if shouldCreateTask {
+                captureTask = "GS"
+            } else {
+                captureTask = "None"
+            }
+        }
+    }
     
     init(captureFolderState: CaptureFolderState, isReupload: Bool) {
         self.captureDir = captureFolderState.captureDir!
@@ -221,6 +229,22 @@ class UploadManager: ObservableObject {
             logger.error("saveCaptureTaskToFile: Cannot write captureTask to file")
         }
     }
+    
+    func saveUploadInfoToFile() {
+        let filePath = self.captureDir.appendingPathComponent("uploadInfo.txt")
+        
+        do {
+            let uploadInfoJSON: [String: Any] = [
+                "captureID": self.captureId!,
+                "name": self.captureName,
+                "task": self.captureTask,
+            ]
+            let data = try JSONSerialization.data(withJSONObject: uploadInfoJSON, options: .prettyPrinted)
+            try data.write(to: filePath)
+        } catch {
+            print("saveUploadInfoToFile: Cannot save uploadInfo to file")
+        }
+    }
 
     
     // MARK: - backend API
@@ -293,16 +317,24 @@ class UploadManager: ObservableObject {
         DispatchQueue.main.async {
             self.uploadState = .callingCreateCapture
         }
-        guard !isReupload else {
+        
+        if isReupload { /// 從 previous capture 上傳
             logger.log("createCapture: captureId is already exist")
-            DispatchQueue.main.async {
-                self.uploadState = .doneCreateCapture
+            let filePath = self.captureDir.appendingPathComponent("captureId.txt")
+            do {
+                let backendCaptureId = try String(contentsOf: filePath, encoding: .utf8)
+                print("Extract from captureId.txt: \(backendCaptureId)")
+                self.captureId = backendCaptureId
+            } catch {
+                logger.error("Cannot find captureId.txt")
             }
-            return
+//            DispatchQueue.main.async {
+//                self.uploadState = .doneCreateCapture
+//            }
+//            return
         }
         
         let url = URL(string: "\(backendUrl!)/capture")
-        
         struct emptyData: Encodable {}
         
         var request = URLRequest(url: url!)
@@ -696,7 +728,7 @@ class UploadManager: ObservableObject {
         while uploadState != .doneCreateCapture {
             await Task.yield()
         }
-        saveCaptureIdToFile()
+//        saveCaptureIdToFile()
         
         // update capture
         if uploadState == .doneCreateCapture {
@@ -709,7 +741,7 @@ class UploadManager: ObservableObject {
         
         // upload image
         if uploadState == .doneUpdateCapture {
-            if(!isReupload) {
+            if (!isReupload) {
                 await uploadImages()
             }
         }
@@ -717,17 +749,27 @@ class UploadManager: ObservableObject {
             await Task.yield()
         }
         
-        // lock capture
-        lockCapture()
-        while uploadState != .doneLockCapture {
-            await Task.yield()
-        }
         
-        // create task
-        if uploadState == .doneLockCapture {
-            await createTask()
-            saveCaptureTaskToFile()
+        if (shouldCreateTask) {
+            // lock capture
+            lockCapture()
+            while uploadState != .doneLockCapture {
+                await Task.yield()
+            }
+            
+            // create task
+            if uploadState == .doneLockCapture {
+                await createTask()
+//                saveCaptureTaskToFile()
+            }
+        } else {
+            DispatchQueue.main.async {
+                self.uploadState = .doneCreateTask  /// trigger 'allDonePhase' on isUploadingView
+            }
         }
+        saveUploadInfoToFile()
+        
+        
         
     }
 }

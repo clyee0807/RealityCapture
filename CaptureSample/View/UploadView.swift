@@ -34,7 +34,8 @@ struct UploadView: View {
                 // there may be a carousel showing images to upload...
                 Spacer()
                 NameTextField(uploadManager: uploadManager)
-                TaskTypeView(uploadManager: uploadManager)
+                // TaskTypeView(uploadManager: uploadManager)
+                TaskToggleView(uploadManager: uploadManager)
                 Spacer()
                 UploadButtonView(model: model, uploadManager: uploadManager, isUploading: $isUploading)
             }
@@ -70,6 +71,7 @@ struct NameTextField: View {
                 .frame(height: 40)
                 .textFieldStyle(.roundedBorder)
                 .foregroundColor(.black)
+                .disableAutocorrection(true)
                 .onSubmit {
                     uploadManager.captureName = name
                     logger.info("uploadManager.captureName: \(uploadManager.captureName)")
@@ -128,6 +130,34 @@ struct TaskTypeView: View {
             .pickerStyle(.segmented)
             .frame(height: 40)
             .foregroundColor(.black)
+            Spacer()
+                .frame(height: 30)
+        }
+    }
+}
+
+struct TaskToggleView: View {
+    @ObservedObject var uploadManager: UploadManager
+    @State private var isEnabled: Bool = false
+    
+    init(uploadManager: UploadManager){
+        self.uploadManager = uploadManager
+    }
+    
+    var body: some View {
+        VStack{
+            Toggle("Upload capture with generating 3D reconstruction result", isOn: $isEnabled)
+                .toggleStyle(.switch)
+                .tint(.blue)
+                .onChange(of: isEnabled) { value in
+                    uploadManager.shouldCreateTask = value
+                    print("Set shouldeCreateTask to \(value)")
+                }
+            Spacer()
+                .frame(height: 10)
+            Text("If generation is done, viewer link would be provided in the capture gallery page.")
+                .foregroundColor(.gray)
+                .font(.caption)
             Spacer()
                 .frame(height: 30)
         }
