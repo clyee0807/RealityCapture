@@ -58,6 +58,7 @@ struct NewCaptureButton: View {
 //                model.startSetup()
 //            }
             showCameraView = true
+            model.state = .detecting
         }, label: {
             Text("New Capture")
                 .padding(.horizontal, 35.0)

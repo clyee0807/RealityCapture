@@ -11,6 +11,8 @@ import os
 private let logger = Logger(subsystem: "com.lychen.CaptureSample",
                             category: "ContentView")
 
+let accelerationThreshold = 0.02
+
 /// This is the root view for the app.
 struct ContentView: View {
     @ObservedObject var model: ARViewModel
@@ -24,6 +26,32 @@ struct ContentView: View {
             .navigationBarBackButtonHidden(true)  /// navigationLink will automatically add a back button on the top scene
             
             ARViewBottomPanel(model: model)
+            
+            if model.state == .detecting {
+                Text("Tap to add an anchor to track the object")
+                    .foregroundColor(.white)
+                    .padding()
+                    .cornerRadius(10)
+                    .padding(.bottom, 100)
+                    .transition(.opacity)
+            }
+            
+            if model.state == .capturing1 || model.state == .capturing2 {
+                
+                if model.closestPoint == -1 {
+                    Text("Move the camera to the checkpoint")
+                        .foregroundColor(.white)
+                        .padding()
+                        .transition(.opacity)
+                }
+                
+                else if model.getAcceleration()! > accelerationThreshold {
+                    Text("Slower the camera movement")
+                        .foregroundColor(.white)
+                        .padding()
+                        .transition(.opacity)
+                }
+            }
         }
     }
     
@@ -31,27 +59,26 @@ struct ContentView: View {
 
 struct ARViewTopPanel: View {
     @ObservedObject var model: ARViewModel
-    let accelerationThreshold = 0.02
 
     var body: some View {
         VStack {
             HStack {
                 VStack(alignment:.leading) {
                     if let acceleration = model.getAcceleration() {
-                        let text = String(format: "Acceleration: %.3f G", acceleration)
+                        let text = String(format: "%.3f G", acceleration)
                         Text(text)
                             .foregroundColor(acceleration > accelerationThreshold ? .red : .primary)
                     } else {
                         Text("No Acceleration Data")
                     }
-//                    DebugMessageButton(model: model)
-                }
+                    DebugMessageButton(model: model)
+                }.padding()
                 Spacer()
                 VStack(alignment:.leading) {
                     Text("\(model.appState.trackingState)")
-                    if case .SessionStarted = model.appState.writerState {
-                        Text("\(model.datasetWriter.currentFrameCounter) Frames")
-                    }
+//                    if case .SessionStarted = model.appState.writerState {
+//                        Text("\(model.datasetWriter.currentFrameCounter) Frames")
+//                    }
                     if model.appState.supportsDepth {
                         Text("Depth Supported")
                     }
@@ -79,42 +106,37 @@ struct ARViewBottomPanel: View {
             }
             
             Spacer()
-            HStack(spacing: 20) {
+            HStack(spacing: 0) {
                 // MARK: positioning (bounding box)
                 if model.state == .positioning {
-                    Spacer()
                     Button(action: {
                         model.resetWorldOrigin()
                         model.state = .detecting
                     }) {
                         Text("Reset")
-                            .padding(.horizontal, 15)
-                            .padding(.vertical, 5)
-                            .foregroundColor(.black)
+                            .padding(.horizontal, 30)
+                            .padding(.vertical, 15)
+                            .foregroundColor(.white)
                     }
-                    .background(Color.blue)
-                    .cornerRadius(10)
+                    .background(Color.clear)
+                    .cornerRadius(50)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 50)
+                            .stroke(Color.white, lineWidth: 1)
+                    )
+                    
+                    Spacer()
                     
                     Button(action: {
-//                        model.requestNewCaptureFolder()
-                        // remove bounding box
-//                        model.removeAllChildren()
                         model.state = .capturing1
-//                        do {
-//                            try model.datasetWriter.initializeProject()
-//                                model.state = .capturing1
-//                            }
-//                            catch {
-//                                print("\(error)")
-//                            }
                     }) {
                         Text("Start")
-                            .padding(.horizontal, 15)
-                            .padding(.vertical, 5)
+                            .padding(.horizontal, 30)
+                            .padding(.vertical, 15)
                             .foregroundColor(.black)
                     }
-                    .background(Color.blue)
-                    .cornerRadius(10)
+                    .background(Color.white)
+                    .cornerRadius(50)
                 }
                 
                 // MARK: capturing
@@ -126,33 +148,30 @@ struct ARViewBottomPanel: View {
                         model.session?.pause()
                         logger.info("End Captue")
                         if model.captureFolderState != nil {
-                            print("captures:\n \(model.captureFolderState?.captures)")
-                            print("captureDir: \(model.captureFolderState?.captureDir)")
+                            print("captures:\n \(String(describing: model.captureFolderState?.captures))")
+                            print("captureDir: \(String(describing: model.captureFolderState?.captureDir))")
                         }
                     }) {
                         Text("End")
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 8)
+                            .padding(.horizontal, 30)
+                            .padding(.vertical, 15)
                             .foregroundColor(.black)
                     }
-                    .background(Color.blue)
-                    .cornerRadius(10)
+                    .background(Color.white)
+                    .cornerRadius(50)
                     
                     Spacer()
-//                    Button(action: {
-//                        model.captureFrame()
-//                    }) {
-//                        Text("Capture")
-//                            .padding(.horizontal, 20)
-//                            .padding(.vertical, 5)
-//                            .foregroundColor(.black)
-//                    }
-//                    .background(Color.blue)
-//                    .cornerRadius(10)
                     CaptureButton(model: model)
+                    Spacer()
+                    
+                    if case .SessionStarted = model.appState.writerState {
+                        Text("\(model.datasetWriter.currentFrameCounter) Frames")
+                    }
                 }
             }
-            .padding()
+//            .padding()
+            .padding(.horizontal, 20)
+            .padding(.bottom, 10)
         }
     }
 }
@@ -172,6 +191,10 @@ struct CaptureButton: View {
     }
     
     var body: some View {
+        let isDisalbeCapture = 
+            (model.getAcceleration()! > accelerationThreshold) ||
+            (model.closestPoint == -1)
+        
         Button(action: {
             model.captureFrame()
         }, label: {
@@ -181,7 +204,9 @@ struct CaptureButton: View {
 //            } else {
 //                ManualCaptureButtonView()
 //            }
-        })//.disabled(!model.isCameraAvailable || !model.readyToCapture)
+        })
+        .disabled(isDisalbeCapture)
+        .opacity(isDisalbeCapture ? 0.5 : 1.0)
     }
 }
 struct ManualCaptureButtonView: View {
@@ -206,24 +231,28 @@ struct DebugMessageButton: View {
     
     var body: some View {
         Button(action: {
-//            model.stopMonitoringAcceleration()
-//            print(ARWorldTrackingConfiguration.supportedVideoFormats)
-            print("Anchor position: \(model.anchorPosition)")
-            print("Camera position: \(model.cameraPosition)")
-            let projectName = model.datasetWriter.projectName
-            let imagePath = getAllCapturedImagePaths(projectName: projectName)
-            print("imagePath = \(imagePath)")
-            model.datasetWriter.uploadCapturedImages()
-//            let size = model.calculateBoundingBoxSize()
-//            print("Bounding box size: (\(size.x), \(size.y), \(size.z))")
+            model.stopMonitoringAcceleration()
+            //print("Anchor position: \(String(describing: model.anchorPosition))")
+            //print("Camera position: \(String(describing: model.cameraPosition))")
+            print("firstHeight: \(String(describing: model.captureTrack?.firstHeight))")
+            print("SecnodHeight: \(String(describing: model.captureTrack?.secondHeight))")
+            
+
+            let size = model.calculateBoundingBoxSize()
+            print("Bounding box size: (\(size.x), \(size.y), \(size.z))")
 //            print("originAnchor: \n \(model.originAnchor)")
-//            model.callAPI()
 //            print("checkpoints:\n \(model.checkpoints)")
         }) {
-            Text("Debug")
+            Text("D")
+                .font(.system(size: 12))
+                .foregroundColor(.black)
+                .frame(width: 40, height: 40)
+                .background(Color.white)
+                .clipShape(Circle())
         }
-        .buttonStyle(.bordered)
-        .buttonBorderShape(.capsule)
+        .buttonStyle(.plain)
+//        .buttonStyle(.bordered)
+//        .buttonBorderShape(.capsule)
     }
 }
 

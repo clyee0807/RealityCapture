@@ -209,7 +209,7 @@ class CaptureFolderState: ObservableObject {
             let filePath = captureDir.appendingPathComponent("uploadInfo.txt")
             let dummyUploadInfo: [String: Any] = [
                 "captureID": "",
-                "name": "Not Uploaded Yet",
+                "name": "",
                 "task": "None"
             ]
             guard let data = try? Data(contentsOf: filePath) else {

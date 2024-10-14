@@ -75,10 +75,10 @@ class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
             self.appState.supportsDepth = true
         }
         
-        //startMotionDetection()
+        startMotionDetection()
         
-        let count = 20
-        for i in 0..<count {
+        let totalCount = 40
+        for i in 0..<totalCount {
             self.checkpoints[i] = .initialized
         }
     }
@@ -95,38 +95,37 @@ class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
     @Published var closestPoint: Int? = nil
     @Published var checkpoints: [Int: PointStatus] = [:]  // state of each checkpoint
                                                           // e.g 2: .initialized
-    //@Published var capturedPoints: [Int] = []
     
     /// motion detection
-//    var motionDetection = MotionDetection()
-//    var lastAcceleration: CMAcceleration?
-//
-//    func startMotionDetection() {
-//        motionDetection.startAccelerometerUpdates { [weak self] data, error in
-//            guard let strongSelf = self, let accelerationData = data else {
-//                print("Error reading accelerometer data: \(error?.localizedDescription ?? "No error info")")
-//                return
-//            }
-//            strongSelf.lastAcceleration = accelerationData.acceleration
-//            //let totalAcceleration = sqrt(pow(accelerationData.acceleration.x, 2) + pow(accelerationData.acceleration.y, 2) + pow(accelerationData.acceleration.z, 2))
-//            //print("Total acceleration: \(totalAcceleration - 1)") // minus the gravity
-//            //print("Accelerometer data: x: \(accelerationData.acceleration.x), y: \(accelerationData.acceleration.y), z: \(accelerationData.acceleration.z)")
-//        }
-//    }
+    var motionDetection = MotionDetection()
+    var lastAcceleration: CMAcceleration?
+
+    func startMotionDetection() {
+        motionDetection.startAccelerometerUpdates { [weak self] data, error in
+            guard let strongSelf = self, let accelerationData = data else {
+                print("Error reading accelerometer data: \(error?.localizedDescription ?? "No error info")")
+                return
+            }
+            strongSelf.lastAcceleration = accelerationData.acceleration
+            //let totalAcceleration = sqrt(pow(accelerationData.acceleration.x, 2) + pow(accelerationData.acceleration.y, 2) + pow(accelerationData.acceleration.z, 2))
+            //print("Total acceleration: \(totalAcceleration - 1)") // minus the gravity
+            //print("Accelerometer data: x: \(accelerationData.acceleration.x), y: \(accelerationData.acceleration.y), z: \(accelerationData.acceleration.z)")
+        }
+    }
     
-//    func stopMonitoringAcceleration() {
-//        print("Stop Monitoring Acceleration.")
-//        motionDetection.stopAccelerometerUpdates()
-//    }
-//
+    func stopMonitoringAcceleration() {
+        print("Stop Monitoring Acceleration.")
+        motionDetection.stopAccelerometerUpdates()
+    }
+
     func getAcceleration() -> Double? {
-        //        guard let acceleration = lastAcceleration else {
-        //            print("No acceleration data available.")
-        //            return nil
-        //        }
-        //        let totalAcceleration = sqrt(pow(acceleration.x, 2) + pow(acceleration.y, 2) + pow(acceleration.z, 2))
-        //        return totalAcceleration - 1 // minus the gravity
-        return 0.01
+        guard let acceleration = lastAcceleration else {
+            print("No acceleration data available.")
+            return nil
+        }
+        let totalAcceleration = sqrt(pow(acceleration.x, 2) + pow(acceleration.y, 2) + pow(acceleration.z, 2))
+        return totalAcceleration - 1 // minus the gravity
+//        return 0.01
     }
     
     /// timer & auto capture
@@ -212,7 +211,19 @@ class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
             return
         }
         
-        let captureTrack = CaptureTrack(anchorPosition: anchorPosition, originAnchor: originAnchor, model: self)
+        let boundingBoxSize = calculateBoundingBoxSize()
+        let longestSide = max(boundingBoxSize.x, boundingBoxSize.y, boundingBoxSize.z)
+        let scaleFactor: Float = 0.2
+        let radiusFactor: Float = 2
+        logger.log("createCaptureTrack: Scaling size of hemisphere = \(longestSide * scaleFactor)")
+        logger.log("createCaptureTrack: checkpoint radius = \(longestSide * radiusFactor)")
+
+        let captureTrack = CaptureTrack(anchorPosition: anchorPosition,
+                                        originAnchor: originAnchor,
+                                        scale: longestSide * scaleFactor,
+                                        radius: longestSide * radiusFactor,
+                                        model: self)
+        
         captureTrack.name = "CaptureTrack"
         originAnchor.addChild(captureTrack)
         self.captureTrack = captureTrack
@@ -234,13 +245,7 @@ class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
                 track.updatePoints(pointIndex: self.closestPoint!)
             }
         }
-        
-        // 拍完達標要轉到下個 state
-//        let capturedCount = self.checkpoints.filter { $1 == .captured }.count
-//        if self.state == .capturing1 && capturedCount >= 3 {  // 方便開發，先簡單設定進入下個 state 的邏輯
-//            print("Completed capturing!")
-//            self.state = .training
-//        }
+
     }
     
     func session(_ session: ARSession, cameraDidChangeTrackingState camera: ARCamera) {
@@ -254,12 +259,12 @@ class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
 
         switch toState {
         case .notSet:
-            print("Set ModelState to notSet")
+            logger.info("Set ModelState to notSet")
         case .initialize:
-            print("Set ModelState to initialize")
+            logger.info("Set ModelState to initialize")
         
         case .detecting:
-            print("Set ModelState to detecting")
+            logger.info("Set ModelState to detecting")
             if let originAnchor = originAnchor {
                 if let entity = originAnchor.children.first(where: {$0.name == "CaptureTrack"}) {
                     // print("Remove CaptureTrack")
@@ -274,39 +279,39 @@ class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
             }
             
         case .positioning:
-            print("Set ModelState to positioning")
+            logger.info("Set ModelState to positioning")
 
         case .capturing1:
-            print("Set ModelState to capturing")
-            
-            if let boundingBox = originAnchor?.children.first(where: { $0.name == "BoundingBox" }) {
-                print("BoundingBox found, removing all children")
-                boundingBox.children.removeAll() // 移除 BoundingBox 底下的所有 children
-            } else {
-                print("BoundingBox not found")
-            }
+            logger.info("Set ModelState to capturing")
             
             if (originAnchor?.children.first(where: { $0.name == "CaptureTrack"})) != nil {
                 print("captureTrack is existed")
             } else {
-                print("Create captureTrack")
+                logger.log("Create captureTrack")
                 createCaptureTrack()
             }
+            
+            if let boundingBox = originAnchor?.children.first(where: { $0.name == "BoundingBox" }) {
+                logger.log("BoundingBox found, removing all children")
+                boundingBox.children.removeAll() // 移除 BoundingBox 底下的所有 children
+            } else {
+                print("BoundingBox not found")
+            }
         case .training:
-            print("Set ModelState to training")
+            logger.info("Set ModelState to training")
             DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in  // transfer to .feedback state after 3 seconds
                 self?.state = .feedback
             }
         case .feedback:
-            print("Set ModelState to feedback")
+            logger.info("Set ModelState to feedback")
             
         case .readyToRecapture:
-            print("Set ModelState to readyToRecapture")
+            logger.info("Set ModelState to readyToRecapture")
 
 
         case .failed:
             // Shows error screen.
-            print("App failed state error")
+            logger.info("App failed state error")
         default:
             break
         }
@@ -327,7 +332,7 @@ class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
         }
     }
 
-    private func calculateBoundingBoxSize() -> SIMD3<Float> {
+    func calculateBoundingBoxSize() -> SIMD3<Float> {
         guard let lineXEntity = self.originAnchor?.findEntity(named: "line2") as? ModelEntity,
             let lineYEntity = self.originAnchor?.findEntity(named: "line3") as? ModelEntity,
             let lineZEntity = self.originAnchor?.findEntity(named: "line5") as? ModelEntity,
@@ -343,7 +348,6 @@ class ARViewModel : NSObject, ARSessionDelegate, ObservableObject {
         let lengthZ = meshZ.bounds.max.z - meshZ.bounds.min.z
 
         return SIMD3<Float>(lengthX, lengthY, lengthZ)
-  
     }
     
 

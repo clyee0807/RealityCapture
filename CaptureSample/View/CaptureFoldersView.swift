@@ -67,7 +67,7 @@ struct CaptureFolderItem: View {
     private let thumbnailHeight: CGFloat = 50
     let dummyUploadInfo: [String: Any] = [
         "captureID": "",
-        "name": "Not Uploaded Yet",
+        "name": "",
         "task": "None"
     ]
     
@@ -86,19 +86,26 @@ struct CaptureFolderItem: View {
 //        }
 //    }
     @State var captureNameForegroundColor = Color.gray
+    @State var hasUploaded: Bool = false
     @State var uploadInfo: [String: Any] = [
         "captureID": "",
-        "name": "Not Uploaded Yet",
+        "name": "",
         "task": "None"
     ] {
         didSet {
+            if let captureID = uploadInfo["captureID"] as? String, captureID != "" {
+                self.hasUploaded = true
+            } else {
+                self.hasUploaded = false
+            }
+
             if let task = uploadInfo["task"] as? String, task != "None" {
                 self.hasTask = true
             } else {
                 self.hasTask = false
             }
             
-            if let name = uploadInfo["name"] as? String, name != "Not Uploaded Yet" {
+            if let name = uploadInfo["name"] as? String, name != "" {
                 self.captureNameForegroundColor = Color.white
             } else {
                 self.captureNameForegroundColor = Color.gray
@@ -159,15 +166,23 @@ struct CaptureFolderItem: View {
                 }
                 VStack(alignment: .leading) {
 //                    Text(ownedCaptureFolderState.captureDir!.lastPathComponent)
-                    Text("\(uploadInfo["name"] as? String ?? "")")
-                        .foregroundColor(self.captureNameForegroundColor)
+                    Text("\(ownedCaptureFolderState.captureDir?.lastPathComponent ?? "NONE")")
+                        .foregroundColor(.white)
                     HStack {
-                        Text("\(ownedCaptureFolderState.captures.count) images")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                        VStack{
+                            Text("\(uploadInfo["name"] as? String ?? "")\n\(ownedCaptureFolderState.captures.count) images")
+                        }
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.leading)
                         Spacer()
+                        if (!self.hasUploaded){
+                            Image(systemName: "xmark.icloud")
+                        }
                         if (self.hasTask){
                             Image(systemName: "cube.transparent")
+                                .renderingMode(.template)
+                                .foregroundColor(.green)
                         }
                     }
 //                    .onReceive(publisher, perform: { task in

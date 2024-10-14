@@ -34,6 +34,7 @@
 		D99FB2A42C77A05100A78EA6 /* UploadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D99FB2A32C77A05100A78EA6 /* UploadManager.swift */; };
 		D99FB2A62C7B97D600A78EA6 /* hemisphere.usdz in Resources */ = {isa = PBXBuildFile; fileRef = D99FB2A52C7B97D600A78EA6 /* hemisphere.usdz */; };
 		D99FB2AA2C80546500A78EA6 /* checkpoint.usdz in Resources */ = {isa = PBXBuildFile; fileRef = D99FB2A92C80546500A78EA6 /* checkpoint.usdz */; };
+		D9FA261E2CB3BCED00BFF79F /* MotionDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9FA261D2CB3BCED00BFF79F /* MotionDetection.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -69,6 +70,7 @@
 		D99FB2A32C77A05100A78EA6 /* UploadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadManager.swift; sourceTree = "<group>"; };
 		D99FB2A52C7B97D600A78EA6 /* hemisphere.usdz */ = {isa = PBXFileReference; lastKnownFileType = file.usdz; path = hemisphere.usdz; sourceTree = "<group>"; };
 		D99FB2A92C80546500A78EA6 /* checkpoint.usdz */ = {isa = PBXFileReference; lastKnownFileType = file.usdz; path = checkpoint.usdz; sourceTree = "<group>"; };
+		D9FA261D2CB3BCED00BFF79F /* MotionDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionDetection.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -156,6 +158,7 @@
 				D99FB29D2C6D1AEC00A78EA6 /* Utils.swift */,
 				D99FB2A32C77A05100A78EA6 /* UploadManager.swift */,
 				C9BF99A025E0808D00707ADC /* ImageLoader.swift */,
+				D9FA261D2CB3BCED00BFF79F /* MotionDetection.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -262,6 +265,7 @@
 				C91EEE4D25EDBE46009FD603 /* CaptureFolderState.swift in Sources */,
 				D99FB2942C6D196B00A78EA6 /* AppState.swift in Sources */,
 				C9BF99A125E0808D00707ADC /* ImageLoader.swift in Sources */,
+				D9FA261E2CB3BCED00BFF79F /* MotionDetection.swift in Sources */,
 				C96059EC25CA1A5E00FDB64F /* PhotoCaptureDelegate.swift in Sources */,
 				D99FB2A02C6E97F500A78EA6 /* ARViewContainer.swift in Sources */,
 				D99FB29C2C6D1A0C00A78EA6 /* CaptureTrack.swift in Sources */,
